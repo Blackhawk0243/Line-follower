@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Robot Line Follower</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; overflow: hidden; }
+        /* Custom scrollbar for settings panel */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border-right: 1px solid #334155; }
+        input, select { background-color: #334155; border: 1px solid #475569; color: white; border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 100%; font-size: 0.875rem;}
+        input:focus, select:focus { outline: none; border-color: #3b82f6; ring: 2px #3b82f6; }
+        label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; display: block;}
+        
+        .counter-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+        
+        #canvas-container { position: relative; width: 100%; height: 100%; background: #e2e8f0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        canvas { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border-radius: 0.5rem; background: white; }
+    </style>
+</head>
+<body class="h-screen flex">
+
+    <aside class="glass-panel w-96 h-full flex flex-col z-10 shadow-2xl overflow-hidden shrink-0">
+        <div class="p-6 border-b border-slate-700">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center gap-2">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Line Follower Pro
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">Simulasi Konfigurasi Counter & PID</p>
+        </div>
+
+        <div class="p-4 border-b border-slate-700 bg-slate-800/50">
+            <div class="flex flex-col gap-3">
+                <div>
+                    <label>Start Mode</label>
+                    <select id="startMode">
+                        <option value="AC">AC (Hanya Belok)</option>
+                        <option value="SA">SA (Belok + Run SA)</option>
+                        <option value="SB" selected>SB (Belok + Run SA + Run SB)</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button id="btnStart" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded transition-colors">Start</button>
+                    <button id="btnStop" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded transition-colors hidden">Stop</button>
+                    <button id="btnReset" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded transition-colors">Reset</button>
+                </div>
+            </div>
+            
+            <div class="mt-4 flex justify-between items-center text-xs font-mono text-slate-300">
+                <span>Status: <span id="simStatus" class="text-yellow-400 font-bold">IDLE</span></span>
+                <span>Counter Aktif: <span id="activeCounterDisp" class="text-emerald-400 font-bold">0</span></span>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4" id="countersContainer">
+            <!-- Counters will be injected here -->
+        </div>
+
+        <div class="p-4 border-t border-slate-700 bg-slate-800/80">
+            <button id="btnAddCounter" class="w-full border border-dashed border-slate-500 hover:border-slate-300 hover:bg-slate-700/50 text-slate-300 font-semibold py-2 px-4 rounded transition-all flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Tambah Counter
+            </button>
+        </div>
+    </aside>
+
+    <main id="canvas-container" class="flex-1">
+        <!-- Visible Canvas -->
+        <canvas id="simCanvas" width="800" height="900"></canvas>
+        
+        <!-- Hidden Canvas for Sensor Reading (Pure Path, No Robot Graphics) -->
+        <canvas id="sensorCanvas" width="800" height="900" style="display: none;"></canvas>
+
+        <!-- Sensor Status Overlay -->
+        <div class="absolute bottom-6 right-6 bg-slate-800/90 p-4 rounded-xl shadow-lg border border-slate-700 backdrop-blur-sm">
+            <h3 class="text-xs text-slate-400 font-bold uppercase mb-2 text-center">Sensor Array</h3>
+            <div class="flex gap-2 justify-center" id="sensorIndicators">
+                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-0"></div>
+                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-1"></div>
+                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-2"></div>
+                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-3"></div>
+                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-4"></div>
+            </div>
+            <div class="text-center text-[10px] text-slate-500 mt-2 font-mono">Error: <span id="errorValDisp">0</span></div>
+        </div>
+    </main>
+
+    <script>
+        // DOM Elements
+        const countersContainer = document.getElementById('countersContainer');
+        const btnAddCounter = document.getElementById('btnAddCounter');
+        const btnStart = document.getElementById('btnStart');
+        const btnStop = document.getElementById('btnStop');
+        const btnReset = document.getElementById('btnReset');
+        const simStatus = document.getElementById('simStatus');
+        const activeCounterDisp = document.getElementById('activeCounterDisp');
+        const startModeSelect = document.getElementById('startMode');
+        
+        // Canvas Setup
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const sensorCanvas = document.getElementById('sensorCanvas');
+        const sCtx = sensorCanvas.getContext('2d', { willReadFrequently: true });
+
+        // Simulation State
+        let animationId = null;
+        let isRunning = false;
+        let lastTime = 0;
+        let counters = [];
+        let currentCounterIndex = -1; // -1 means before first line mark
+        
+        // Robot State Machine Enums
+        const States = {
+            IDLE: 'IDLE',
+            FINDING_LINE: 'FINDING_LINE', // Initial state to get on track
+            FOLLOWING_LINE: 'FOLLOWING_LINE', // Between counters
+            EXEC_TURN: 'EXEC_TURN', // Belok
+            EXEC_SA: 'EXEC_SA',   // Run SA
+            EXEC_SB: 'EXEC_SB',   // Run SB
+            FINISHED: 'FINISHED'
+        };
+
+        class Robot {
+            constructor() {
+                // Initial Start Position based on the provided track image (bottom rightish)
+                this.startX = 500;
+                this.startY = 800;
+                this.startAngle = -Math.PI / 2; // Facing Up
+                
+                this.reset();
+                
+                // Physical Properties
+                this.width = 30;
+                this.height = 40;
+                this.wheelBase = 32; // Distance between wheels
+                this.wheelRadius = 8;
+                this.sensorOffset = 25; // Distance from center to sensor array
+                
+                // Dynamics
+                this.state = States.IDLE;
+                this.timer = 0; // ms timer for SA/SB
+                this.turnTimer = 0;
+                
+                // PID State
+                this.lastError = 0;
+                this.integral = 0;
+
+                // Sensor readings (0 = white, 1 = black)
+                this.sensorValues = [0, 0, 0, 0, 0];
+                this.hitJunction = false;
+            }
+
+            reset() {
+                this.x = this.startX;
+                this.y = this.startY;
+                this.angle = this.startAngle;
+                this.state = States.IDLE;
+                this.timer = 0;
+                this.turnTimer = 0;
+                this.lastError = 0;
+                this.integral = 0;
+                this.hitJunction = false;
+            }
+
+            update(dt, config) {
+                if (this.state === States.IDLE || this.state === States.FINISHED) return;
+
+                this.readSensors();
+                this.checkJunction();
+
+                let vl = 0, vr = 0;
+
+                // State Machine Logic
+                switch (this.state) {
+                    case States.FINDING_LINE:
+                    case States.FOLLOWING_LINE:
+                        // Normal line following until hitting a junction
+                        let pidDefault = { kp: 1.5, ki: 0.01, kd: 5 }; // Default PID before any counter
+                        let baseSpeed = 40; // Default speed
+                        if (currentCounterIndex >= 0 && counters[currentCounterIndex]) {
+                            // If we finished SB of previous counter, what speed do we use to find next junction?
+                            // Let's use SB speed or a default. We'll use a slow default.
+                            baseSpeed = 30; 
+                        }
+                        let res = this.calculatePID(pidDefault, baseSpeed);
+                        vl = res.vl; vr = res.vr;
+                        break;
+
+                    case States.EXEC_TURN:
+                        // Open-loop turning without PID
+                        vl = config.vTurnL;
+                        vr = config.vTurnR;
+                        this.turnTimer -= dt;
+                        
+                        // Condition to end turn: Time has passed AND middle sensor finds line
+                        // Or just time-based to prevent infinite turning if line is missed.
+                        // Let's use a combination: Must turn at least 300ms, then look for line.
+                        if (this.turnTimer <= 0) {
+                            if (this.sensorValues[2] === 1) {
+                                this.transitionTo(States.EXEC_SA, config);
+                            } else if (this.turnTimer < -1500) {
+                                // Fallback: if it can't find line after 1.5s, force transition to avoid getting stuck
+                                this.transitionTo(States.EXEC_SA, config);
+                            }
+                        }
+                        break;
+
+                    case States.EXEC_SA:
+                        this.timer -= dt;
+                        let resSA = this.calculatePID({kp: config.kp, ki: config.ki, kd: config.kd}, config.sa);
+                        vl = resSA.vl; vr = resSA.vr;
+
+                        if (this.timer <= 0) {
+                            if (startModeSelect.value === 'SA' || startModeSelect.value === 'AC') {
+                                this.transitionTo(States.FINISHED, config);
+                            } else {
+                                this.transitionTo(States.EXEC_SB, config);
+                            }
+                        }
+                        break;
+
+                    case States.EXEC_SB:
+                        this.timer -= dt;
+                        let resSB = this.calculatePID({kp: config.kp, ki: config.ki, kd: config.kd}, config.sb);
+                        vl = resSB.vl; vr = resSB.vr;
+
+                        if (this.timer <= 0) {
+                            this.transitionTo(States.FOLLOWING_LINE, config);
+                        }
+                        break;
+                }
+
+                this.applyKinematics(vl, vr, dt);
+                this.updateUI();
+            }
+
+            transitionTo(newState, config) {
+                this.state = newState;
+                simStatus.innerText = newState;
+                
+                if (newState === States.EXEC_TURN) {
+                    this.turnTimer = 400; // Force open loop for 400ms to clear junction
+                } else if (newState === States.EXEC_SA) {
+                    this.timer = config.ta;
+                    this.integral = 0; // Reset PID
+                    this.lastError = 0;
+                } else if (newState === States.EXEC_SB) {
+                    this.timer = config.tb;
+                    this.integral = 0;
+                    this.lastError = 0;
+                } else if (newState === States.FINISHED) {
+                    stopSimulation();
+                }
+            }
+
+            calculatePID(pid, baseSpeed) {
+                // Calculate Error based on 5 sensors
+                // Weights: outer=-2/-1, center=0, inner=1/2
+                // Sensor index 0 is left-most, 4 is right-most
+                
+                let error = 0;
+                let activeSensors = 0;
+                const weights = [-2, -1, 0, 1, 2];
+                
+                for(let i=0; i<5; i++) {
+                    if (this.sensorValues[i] === 1) {
+                        error += weights[i];
+                        activeSensors++;
+                    }
+                }
+                
+                if (activeSensors > 0) {
+                    error = error / activeSensors;
+                } else {
+                    // Lost line, remember last error direction to spin back
+                    error = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0); 
+                }
+
+                document.getElementById('errorValDisp').innerText = error.toFixed(1);
+
+                let P = pid.kp * error;
+                this.integral += error;
+                
+                // Anti-windup
+                if(this.integral > 50) this.integral = 50;
+                if(this.integral < -50) this.integral = -50;
+                
+                let I = pid.ki * this.integral;
+                let D = pid.kd * (error - this.lastError);
+                
+                let correction = P + I + D;
+                this.lastError = error;
+
+                // Scale correction to realistic motor limits
+                // Map logical speed (e.g. 0-100) to pixels/sec
+                let pixelSpeedBase = (baseSpeed / 100) * 150; // max 150px/sec
+                
+                return {
+                    vl: pixelSpeedBase + correction * 20,
+                    vr: pixelSpeedBase - correction * 20
+                };
+            }
+
+            applyKinematics(vl, vr, dt) {
+                let dtSec = dt / 1000;
+                
+                // Differential Drive Kinematics
+                let v = (vr + vl) / 2;
+                let omega = (vr - vl) / this.wheelBase;
+
+                this.angle += omega * dtSec;
+                this.x += v * Math.cos(this.angle) * dtSec;
+                this.y += v * Math.sin(this.angle) * dtSec;
+            }
+
+            getSensorPositions() {
+                const pos = [];
+                const spacing = 8; // distance between sensors
+                for (let i = 0; i < 5; i++) {
+                    // Offset from center line
+                    let xOffset = (i - 2) * spacing; 
+                    
+                    // Transform to global coordinates based on robot angle and position
+                    // Sensors are at the front (this.sensorOffset)
+                    let globalX = this.x + Math.cos(this.angle) * this.sensorOffset - Math.sin(this.angle) * xOffset;
+                    let globalY = this.y + Math.sin(this.angle) * this.sensorOffset + Math.cos(this.angle) * xOffset;
+                    pos.push({x: globalX, y: globalY});
+                }
+                return pos;
+            }
+
+            readSensors() {
+                const positions = this.getSensorPositions();
+                let newJunctionState = false;
+                let blackCount = 0;
+                let greyCount = 0;
+
+                for (let i = 0; i < 5; i++) {
+                    let p = positions[i];
+                    // Bounds check
+                    if(p.x < 0 || p.y < 0 || p.x >= canvas.width || p.y >= canvas.height) {
+                        this.sensorValues[i] = 0;
+                        continue;
+                    }
+
+                    // Read pixel from hidden canvas
+                    let pixel = sCtx.getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data;
+                    
+                    // Black line logic (R<50, G<50, B<50)
+                    if (pixel[0] < 50 && pixel[1] < 50 && pixel[2] < 50 && pixel[3] > 200) {
+                        this.sensorValues[i] = 1;
+                        blackCount++;
+                    } else {
+                        this.sensorValues[i] = 0;
+                    }
+
+                    // Junction Marker logic (Grey line: specific RGB range)
+                    // Let's say grey marker is around 200,200,200
+                    if (pixel[0] > 180 && pixel[0] < 220 && pixel[1] > 180 && pixel[2] > 180) {
+                        greyCount++;
+                    }
+                }
+
+                // If most sensors see grey, we hit a junction marker
+                if (greyCount >= 3) {
+                    newJunctionState = true;
+                }
+
+                // Junction edge detection (only trigger once per mark)
+                if (newJunctionState && !this.hitJunction) {
+                    this.triggerJunction();
+                }
+                this.hitJunction = newJunctionState;
+            }
+
+            triggerJunction() {
+                // Ignore junctions if we haven't defined counters
+                if (counters.length === 0) return;
+
+                currentCounterIndex++;
+                
+                if (currentCounterIndex >= counters.length) {
+                    // Out of instructions, stop or loop? Let's just stop.
+                    this.transitionTo(States.FINISHED, null);
+                    simStatus.innerText = "ALL COUNTERS DONE";
+                    return;
+                }
+
+                activeCounterDisp.innerText = currentCounterIndex + 1;
+                
+                // Highlight active counter in UI
+                document.querySelectorAll('.counter-card').forEach((c, idx) => {
+                    c.style.borderColor = idx === currentCounterIndex ? '#3b82f6' : '#334155';
+                    c.style.boxShadow = idx === currentCounterIndex ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none';
+                });
+
+                let config = counters[currentCounterIndex];
+                
+                // Start sequence based on mode
+                let mode = startModeSelect.value;
+                if (mode === 'AC') {
+                    this.transitionTo(States.EXEC_TURN, config);
+                } else if (mode === 'SA' || mode === 'SB') {
+                    this.transitionTo(States.EXEC_TURN, config);
+                }
+            }
+
+            updateUI() {
+                // Update sensor LEDs
+                for(let i=0; i<5; i++) {
+                    let ind = document.getElementById(`ind-${i}`);
+                    if(this.sensorValues[i] === 1) {
+                        ind.classList.replace('bg-slate-600', 'bg-red-500');
+                        ind.classList.add('shadow-[0_0_8px_rgba(239,68,68,0.8)]');
+                    } else {
+                        ind.classList.replace('bg-red-500', 'bg-slate-600');
+                        ind.classList.remove('shadow-[0_0_8px_rgba(239,68,68,0.8)]');
+                    }
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                // Body
+                ctx.fillStyle = '#1e293b';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 5;
+                // Round rect for chassis
+                ctx.beginPath();
+                ctx.roundRect(-this.height/2, -this.width/2, this.height, this.width, 5);
+                ctx.fill();
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Direction indicator (arrow)
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.moveTo(0, -5);
+                ctx.lineTo(15, 0);
+                ctx.lineTo(0, 5);
+                ctx.fill();
+
+                // Wheels
+                ctx.fillStyle = '#0f172a';
+                // Left Wheel
+                ctx.fillRect(-10, -this.wheelBase/2 - this.wheelRadius, 20, this.wheelRadius*2);
+                // Right Wheel
+                ctx.fillRect(-10, this.wheelBase/2 - this.wheelRadius, 20, this.wheelRadius*2);
+
+                // Sensor Array Board
+                ctx.fillStyle = '#064e3b'; // PCB Green
+                ctx.fillRect(this.sensorOffset - 5, -20, 10, 40);
+                
+                // Draw Individual Sensors
+                const positions = this.getSensorPositions(); // Need local coords here
+                ctx.fillStyle = '#ef4444'; // Off color, drawn globally below
+                
+                ctx.restore();
+
+                // Draw sensor dots globally so they match reading positions exactly
+                const globalPos = this.getSensorPositions();
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.arc(globalPos[i].x, globalPos[i].y, 2, 0, Math.PI*2);
+                    ctx.fillStyle = this.sensorValues[i] ? '#ef4444' : '#64748b';
+                    ctx.fill();
+                }
+            }
+        }
+
+        const robot = new Robot();
+
+        function drawTrack(context, isHidden) {
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.lineJoin = 'round';
+            context.lineCap = 'round';
+
+            // Draw the main black track line
+            context.strokeStyle = '#000000';
+            context.lineWidth = 16;
+            context.beginPath();
+            
+            // Recreating the "Lapangan SD" track shape approximately
+            // Start bottom right
+            context.moveTo(500, 850);
+            context.lineTo(500, 750);
+            
+            // Bottom Right U-Turn leftwards
+            context.arc(400, 750, 100, 0, Math.PI, true); 
+            
+            // Wavy part going left
+            context.bezierCurveTo(250, 700, 300, 850, 200, 800);
+            context.bezierCurveTo(150, 770, 100, 800, 150, 700);
+
+            // Straight up
+            context.lineTo(150, 600);
+
+            // Zig-Zag Left (Chevron shape)
+            context.lineTo(350, 500);
+            context.lineTo(150, 450);
+            
+            // Zig-Zag Right
+            context.lineTo(400, 350);
+            context.lineTo(150, 300);
+
+            // Long straight up
+            context.lineTo(150, 150);
+
+            // Top Left Curve
+            context.arc(250, 150, 100, Math.PI, 1.5 * Math.PI, false);
+
+            // Top Straight Right
+            context.lineTo(550, 50);
+
+            // Top Right U-Turn down
+            context.arc(550, 100, 50, 1.5*Math.PI, 0.5*Math.PI, false);
+
+            // Straight left
+            context.lineTo(250, 150);
+            
+            // Inner loop turn
+            context.arc(250, 200, 50, 1.5*Math.PI, 0.5*Math.PI, true);
+            
+            // Finish line area
+            context.lineTo(500, 250);
+
+            context.stroke();
+
+            // Draw Junction Markers (Grey lines perpendicular to track)
+            // These will trigger the Counters
+            context.strokeStyle = '#cccccc'; // Grey marker color
+            context.lineWidth = 4;
+            
+            // Function to draw marker
+            const drawMarker = (x, y, w, h) => {
+                context.beginPath();
+                context.moveTo(x-w/2, y-h/2);
+                context.lineTo(x+w/2, y+h/2);
+                context.stroke();
+            }
+
+            // Place some markers logically along the path to trigger counters
+            drawMarker(500, 800, 40, 0); // Marker 1 (Start)
+            drawMarker(150, 650, 40, 0); // Marker 2 (Before zigzag)
+            drawMarker(250, 150, 0, 40); // Marker 3 (Top curve)
+            
+            // If it's the visible canvas, add some decorative start/finish text
+            if (!isHidden) {
+                context.fillStyle = '#64748b';
+                context.font = '14px font-mono font-bold';
+                context.fillText('START', 520, 855);
+            }
+        }
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (isRunning) {
+                // Clear visible canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw Background/Track on visible canvas
+                drawTrack(ctx, false);
+                
+                // Update logic based on current counter config
+                let config = currentCounterIndex >= 0 ? counters[currentCounterIndex] : null;
+                robot.update(dt, config);
+                
+                // Draw Robot
+                robot.draw(ctx);
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function renderCounters() {
+            countersContainer.innerHTML = '';
+            counters.forEach((c, index) => {
+                const card = document.createElement('div');
+                card.className = 'counter-card transition-all duration-300 relative';
+                card.innerHTML = `
+                    <div class="absolute top-2 right-2 text-xs font-bold bg-slate-700 px-2 rounded text-slate-300">#${index+1}</div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div class="col-span-2">
+                            <label>Arah Belok</label>
+                            <select onchange="updateCounter(${index}, 'dir', this.value)">
+                                <option value="kanan" ${c.dir==='kanan'?'selected':''}>Belok Kanan</option>
+                                <option value="kiri" ${c.dir==='kiri'?'selected':''}>Belok Kiri</option>
+                                <option value="maju" ${c.dir==='maju'?'selected':''}>Maju Lurus</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Turn Speed L</label>
+                            <input type="number" value="${c.vTurnL}" onchange="updateCounter(${index}, 'vTurnL', this.value)">
+                        </div>
+                        <div>
+                            <label>Turn Speed R</label>
+                            <input type="number" value="${c.vTurnR}" onchange="updateCounter(${index}, 'vTurnR', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-slate-700 pt-2 mt-2 mb-3 grid grid-cols-2 gap-3">
+                        <div>
+                            <label title="Speed A (0-100)">Speed A</label>
+                            <input type="number" value="${c.sa}" onchange="updateCounter(${index}, 'sa', this.value)">
+                        </div>
+                        <div>
+                            <label title="Timer A (ms)">Timer A (ms)</label>
+                            <input type="number" step="100" value="${c.ta}" onchange="updateCounter(${index}, 'ta', this.value)">
+                        </div>
+                        <div>
+                            <label title="Speed B (0-100)">Speed B</label>
+                            <input type="number" value="${c.sb}" onchange="updateCounter(${index}, 'sb', this.value)">
+                        </div>
+                        <div>
+                            <label title="Timer B (ms)">Timer B (ms)</label>
+                            <input type="number" step="100" value="${c.tb}" onchange="updateCounter(${index}, 'tb', this.value)">
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-slate-700 pt-2 grid grid-cols-3 gap-2">
+                        <div class="col-span-3"><label class="text-[10px] text-emerald-400">PID Settings</label></div>
+                        <div><label>Kp</label><input type="number" step="0.1" value="${c.kp}" onchange="updateCounter(${index}, 'kp', this.value)"></div>
+                        <div><label>Ki</label><input type="number" step="0.01" value="${c.ki}" onchange="updateCounter(${index}, 'ki', this.value)"></div>
+                        <div><label>Kd</label><input type="number" step="0.5" value="${c.kd}" onchange="updateCounter(${index}, 'kd', this.value)"></div>
+                    </div>
+                    
+                    <button onclick="removeCounter(${index})" class="mt-3 w-full text-xs bg-red-900/30 text-red-400 hover:bg-red-800/50 py-1 rounded transition">Hapus Counter</button>
+                `;
+                countersContainer.appendChild(card);
+            });
+            
+            // Scroll to bottom when added
+            countersContainer.scrollTop = countersContainer.scrollHeight;
+        }
+
+        window.addCounter = () => {
+            counters.push({
+                dir: 'kanan',
+                vTurnL: 60, vTurnR: -20, // Example differential for right turn
+                sa: 50, ta: 1000,
+                sb: 80, tb: 2000,
+                kp: 2.0, ki: 0.05, kd: 10.0
+            });
+            renderCounters();
+        };
+
+        window.removeCounter = (index) => {
+            counters.splice(index, 1);
+            renderCounters();
+        };
+
+        window.updateCounter = (index, field, value) => {
+            // Convert to number except for direction string
+            counters[index][field] = field === 'dir' ? value : Number(value);
+        };
+
+        function startSimulation() {
+            if (counters.length === 0) {
+                alert("Tambahkan minimal 1 counter terlebih dahulu!");
+                return;
+            }
+            
+            isRunning = true;
+            btnStart.classList.add('hidden');
+            btnStop.classList.remove('hidden');
+            
+            if (robot.state === States.IDLE || robot.state === States.FINISHED) {
+                // Initial start, kick it off finding the line
+                robot.state = States.FINDING_LINE;
+                currentCounterIndex = -1;
+                simStatus.innerText = "FINDING LINE";
+                activeCounterDisp.innerText = "-";
+            }
+            
+            // Ensure track is drawn on hidden canvas once for sensor reading
+            drawTrack(sCtx, true);
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            btnStart.classList.remove('hidden');
+            btnStop.classList.add('hidden');
+            if (robot.state !== States.FINISHED) {
+                simStatus.innerText = "PAUSED";
+            }
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+            robot.reset();
+            currentCounterIndex = -1;
+            simStatus.innerText = "IDLE";
+            activeCounterDisp.innerText = "0";
+            
+            // Reset UI borders
+            document.querySelectorAll('.counter-card').forEach(c => {
+                c.style.borderColor = '#334155';
+                c.style.boxShadow = 'none';
+            });
+            
+            // Redraw initial state
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawTrack(ctx, false);
+            robot.draw(ctx);
+        }
+
+        // Initialization
+        btnAddCounter.addEventListener('click', addCounter);
+        btnStart.addEventListener('click', startSimulation);
+        btnStop.addEventListener('click', stopSimulation);
+        btnReset.addEventListener('click', resetSimulation);
+
+        window.onload = () => {
+            // Add a default counter
+            addCounter();
+            
+            // Initial draw
+            drawTrack(ctx, false);
+            robot.draw(ctx);
+            drawTrack(sCtx, true); // Prepare sensor canvas
+            
+            // Start animation loop (idling)
+            requestAnimationFrame(gameLoop);
+        };
+
+    </script>
+</body>
+</html>
