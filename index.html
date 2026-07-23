@@ -21,7 +21,7 @@
             <div class="text-red-500 text-5xl mb-4">⚠️</div>
             <h2 class="text-2xl font-bold text-white mb-2">Akses Gambar Diblokir (CORS)</h2>
             <p class="text-slate-300 mb-6 text-sm leading-relaxed">
-                Browser menolak robot untuk membaca warna gambar <span class="font-bold text-white">Lapangan SD.jpg.jpeg</span> karena Anda membuka file ini langsung (URL file://). <br><br>
+                Browser menolak robot untuk membaca warna gambar <span class="font-bold text-white">Lapangan SD.jpeg</span> karena Anda membuka file ini langsung (URL file://). <br><br>
                 <b>Solusi:</b> Gunakan ekstensi <span class="text-blue-400">Live Server</span> di VS Code, atau upload ke Github/Vercel agar berjalan melalui HTTP/HTTPS.
             </p>
             <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">
@@ -146,7 +146,8 @@
         const canvasContainer = document.getElementById('canvasContainer');
 
         let trackImage = new Image();
-        trackImage.src = 'Lapangan SD.jpg.jpeg'; // Harus sama persis dengan nama file Anda
+        trackImage.crossOrigin = "Anonymous"; // Mencegah blokir CORS di server Vercel
+        trackImage.src = 'Lapangan SD.jpeg'; // Perbaikan nama file
         
         let trackLoaded = false;
         let animationId;
