@@ -516,7 +516,8 @@
 
                 // Kinematics Differential Drive
                 const v = (vr + vl) / 2;
-                const omega = (vr - vl) / this.wheelBase;
+                // PERBAIKAN: Rumus putaran diperbaiki (Kiri dikurangi Kanan) agar arahnya benar
+                const omega = (vl - vr) / this.wheelBase;
 
                 this.angle += omega * dtSec;
                 this.x += v * Math.cos(this.angle) * dtSec;
