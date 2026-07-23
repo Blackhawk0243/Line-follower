@@ -556,13 +556,29 @@
                 return;
             }
 
-            simCanvas.width = trackImage.width;
-            simCanvas.height = trackImage.height;
-            hiddenCanvas.width = trackImage.width;
-            hiddenCanvas.height = trackImage.height;
+            // FITUR BARU: Auto-Downscale gambar raksasa agar browser tidak crash
+            const MAX_DIMENSION = 1200; // Batas maksimal pixel yang aman untuk canvas
+            let scaleFactor = 1;
+            
+            if (trackImage.width > MAX_DIMENSION || trackImage.height > MAX_DIMENSION) {
+                if (trackImage.width > trackImage.height) {
+                    scaleFactor = MAX_DIMENSION / trackImage.width;
+                } else {
+                    scaleFactor = MAX_DIMENSION / trackImage.height;
+                }
+                console.log(`Gambar terlalu besar. Diperkecil menjadi ${(scaleFactor*100).toFixed(1)}%`);
+            }
 
-            // Cetak ke canvas tersembunyi
-            hiddenCtx.drawImage(trackImage, 0, 0);
+            const safeWidth = Math.floor(trackImage.width * scaleFactor);
+            const safeHeight = Math.floor(trackImage.height * scaleFactor);
+
+            simCanvas.width = safeWidth;
+            simCanvas.height = safeHeight;
+            hiddenCanvas.width = safeWidth;
+            hiddenCanvas.height = safeHeight;
+
+            // Cetak ke canvas tersembunyi dengan ukuran yang aman
+            hiddenCtx.drawImage(trackImage, 0, 0, safeWidth, safeHeight);
             
             trackLoaded = true;
             imageErrorUI.classList.add('hidden');
@@ -703,7 +719,8 @@
             
             if (trackLoaded) {
                 try {
-                    ctx.drawImage(trackImage, 0, 0);
+                    // Update drawImage agar memakai ukuran canvas yang baru
+                    ctx.drawImage(trackImage, 0, 0, simCanvas.width, simCanvas.height);
                 } catch(e) {
                     console.error("Gagal menggambar ke canvas:", e);
                 }
