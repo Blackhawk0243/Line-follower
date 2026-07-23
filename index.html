@@ -55,20 +55,24 @@
             <div class="flex gap-2">
                 <div class="flex-1">
                     <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start X</label>
-                    <input type="number" id="startX" value="430" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                    <input type="number" id="startX" value="482" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
                 <div class="flex-1">
                     <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start Y</label>
-                    <input type="number" id="startY" value="1113" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                    <input type="number" id="startY" value="1388" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
                 <div class="flex-1">
                     <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Sudut (°)</label>
                     <input type="number" id="startAngle" value="180" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-emerald-400 mb-1 uppercase tracking-wider">Skala</label>
+                    <input type="number" id="robotScale" value="1.5" step="0.1" min="0.5" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white font-bold" oninput="updateRobotScale()">
+                </div>
             </div>
 
             <div class="flex gap-2">
-                <button id="btnStart" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded shadow">Start</button>
+                <button id="btnStart" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded shadow disabled:opacity-50 transition">Start</button>
                 <button id="btnStop" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 px-4 rounded shadow">Stop</button>
                 <button id="btnReset" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded shadow">Reset</button>
             </div>
@@ -78,11 +82,11 @@
                 <span class="text-gray-400">Counter Aktif: <span id="activeCounterText" class="font-mono text-yellow-400 font-bold">-</span></span>
             </div>
             
-            <!-- Fallback Upload Gambar -->
+            <!-- Fallback Upload Gambar Manual -->
             <div class="pt-2 border-t border-gray-800">
                  <p class="text-[10px] text-gray-500 mb-1">Jika lintasan gagal dimuat/putih:</p>
                  <input type="file" id="imageUpload" accept="image/jpeg, image/png" class="hidden">
-                 <button onclick="document.getElementById('imageUpload').click()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs text-gray-300 py-1.5 rounded transition">
+                 <button onclick="document.getElementById('imageUpload').click()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs text-yellow-400 py-1.5 rounded transition font-medium">
                      📂 Pilih File Lintasan Manual
                  </button>
             </div>
@@ -104,7 +108,7 @@
     <div class="flex-1 relative bg-gray-200 flex justify-center items-center overflow-hidden" id="canvasWrapper">
         <div id="loadingOverlay" class="absolute inset-0 bg-gray-900 flex flex-col justify-center items-center z-20 transition-opacity">
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-            <p class="text-gray-300 font-medium">Memuat dan Menyesuaikan Lintasan...</p>
+            <p class="text-gray-300 font-medium">Memuat dan Menyesuaikan Lintasan (Mengecilkan Gambar)...</p>
         </div>
         
         <div id="errorOverlay" class="absolute inset-0 bg-gray-900 flex flex-col justify-center items-center z-20 hidden">
@@ -112,9 +116,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p class="text-white font-bold text-xl mb-2">Gambar Lintasan Gagal Dimuat</p>
-            <p class="text-gray-400 text-sm mb-4">File 'Lapangan_SD.jpeg' tidak ditemukan di server/folder.</p>
-            <button onclick="document.getElementById('imageUpload').click()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded shadow">
-                Upload Manual Sekarang
+            <p class="text-gray-400 text-sm mb-4">Sistem gagal memuat <span class="font-mono text-yellow-400">Lapangan_SD.jpeg</span> dari server.</p>
+            <button onclick="document.getElementById('imageUpload').click()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded shadow mt-2">
+                Pilih File Manual (Jalan Pintas)
             </button>
         </div>
 
@@ -141,7 +145,7 @@
     <script>
         // Data Struktur Counter
         let counters = [
-            { dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 50, ta: 1000, sb: 80, tb: 2000, kp: 25.0, ki: 0.0, kd: 15.0 }
+            { dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 }
         ];
 
         // State Simulator
@@ -159,13 +163,14 @@
         let trackLoaded = false;
         let animationId;
         let lastTime = 0;
-        let imgScale = 1;
 
         // Auto-change default L/R when direction changes
         function handleDirChange(index) {
             const dirSelect = document.getElementById(`dir_${index}`);
             const val = dirSelect.value;
             let l = 100, r = 100;
+            
+            // Logika default belokan
             if (val === 'kanan') { l = 80; r = -20; }
             else if (val === 'kiri') { l = -20; r = 80; }
             
@@ -197,11 +202,11 @@
 
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn L</label>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn Speed L</label>
                             <input type="number" id="tl_${i}" value="${c.vTurnL}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn R</label>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn Speed R</label>
                             <input type="number" id="tr_${i}" value="${c.vTurnR}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
                     </div>
@@ -229,7 +234,7 @@
                     </div>
 
                     <div class="border-t border-gray-700 pt-3">
-                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase text-purple-400">PID Settings (Line Follow)</label>
+                        <label class="block text-[10px] font-bold text-purple-400 mb-2 uppercase">PID Settings (Line Follow)</label>
                         <div class="grid grid-cols-3 gap-2">
                             <div>
                                 <label class="block text-[9px] text-gray-500 mb-0.5">KP</label>
@@ -266,7 +271,7 @@
         };
 
         window.addCounter = () => {
-            counters.push({ dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 50, ta: 1000, sb: 80, tb: 2000, kp: 25.0, ki: 0.0, kd: 15.0 });
+            counters.push({ dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 });
             renderCounters();
             const container = document.getElementById('countersContainer');
             setTimeout(() => container.scrollTop = container.scrollHeight, 10);
@@ -279,10 +284,17 @@
             }
         };
 
+        window.updateRobotScale = () => {
+            if (robot) {
+                robot.scale = parseFloat(document.getElementById('robotScale').value) || 1.5;
+                drawScene(); 
+            }
+        };
+
         const trackImg = new Image();
         
         function processLoadedImage(img) {
-            // Auto Resize jika gambar terlalu besar (Mencegah Crash 6MB)
+            // Auto Resize jika gambar terlalu besar (Mencegah Crash di browser, aman untuk 6MB)
             const MAX_DIMENSION = 1500;
             let targetW = img.width;
             let targetH = img.height;
@@ -298,30 +310,33 @@
             trackCanvas.width = targetW;
             trackCanvas.height = targetH;
 
-            // Gambar ke track offline (bersih tanpa robot)
+            // Gambar ke track offline (bersih tanpa robot) untuk dibaca sensor
             trackCtx.fillStyle = 'white';
             trackCtx.fillRect(0, 0, targetW, targetH);
             trackCtx.drawImage(img, 0, 0, targetW, targetH);
             
-            // Gambar awal ke layar
-            drawScene();
-
             trackLoaded = true;
+            document.getElementById('btnStart').disabled = false;
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.add('hidden');
+            
+            // Gambar awal ke layar
+            drawScene();
         }
 
         trackImg.onload = () => processLoadedImage(trackImg);
 
         trackImg.onerror = () => {
+            // Jika gambar gagal dimuat dari server, tunjukkan error overlay
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.remove('hidden');
+            document.getElementById('btnStart').disabled = true;
         };
 
-        // Memuat gambar dengan versi timestamp untuk bypass cache
+        // Memuat gambar dengan versi timestamp untuk bypass agresif cache dari Vercel/Github
         trackImg.src = 'Lapangan_SD.jpeg?v=' + new Date().getTime();
 
-        // Fitur Manual Upload (Jika CORS/Vercel bermasalah)
+        // Fitur Manual Upload (Jalan Pintas jika URL gagal)
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(file) {
@@ -337,20 +352,23 @@
 
         class Robot {
             constructor() {
-                this.x = 430;
-                this.y = 1113;
+                this.x = 482;
+                this.y = 1388;
                 this.angle = Math.PI; 
+                this.scale = 1.5; 
                 
-                // Diperbesar ~1.5x hingga 2x
+                // Dimensi Dasar
                 this.width = 50; 
                 this.length = 70;
                 this.wheelBase = 55;
                 
-                // Jarak antar sensor dilebarkan dan dimajukan agar pas dengan tebal garis
+                // Sensor direntangkan agar lebih lebar
                 this.sensors = [
-                    { x: 35, y: -30 }, { x: 35, y: -15 },
+                    { x: 35, y: -30 }, 
+                    { x: 35, y: -15 },
                     { x: 35, y: 0 },
-                    { x: 35, y: 15 }, { x: 35, y: 30 }
+                    { x: 35, y: 15 }, 
+                    { x: 35, y: 30 }
                 ];
                 this.sensorValues = [0,0,0,0,0];
                 
@@ -366,6 +384,7 @@
                 this.x = parseFloat(sx);
                 this.y = parseFloat(sy);
                 this.angle = parseFloat(sangle) * Math.PI / 180;
+                this.scale = parseFloat(document.getElementById('robotScale').value) || 1.5;
                 this.activeCounter = 0;
                 this.stateTimer = 0;
                 this.lastError = 0;
@@ -382,15 +401,19 @@
 
                 for (let i = 0; i < 5; i++) {
                     const s = this.sensors[i];
-                    // Rotasi lokal ke global
-                    const globalX = this.x + (s.x * cosA - s.y * sinA);
-                    const globalY = this.y + (s.x * sinA + s.y * cosA);
+                    
+                    // Kalikan koordinat sensor dasar dengan skala
+                    const scaledX = s.x * this.scale;
+                    const scaledY = s.y * this.scale;
+                    
+                    // Rotasi lokal ke global map
+                    const globalX = this.x + (scaledX * cosA - scaledY * sinA);
+                    const globalY = this.y + (scaledX * sinA + scaledY * cosA);
 
                     if (globalX >= 0 && globalX < trackCanvas.width && globalY >= 0 && globalY < trackCanvas.height) {
-                        // Baca dari trackCanvas (lintasan bersih), bukan mainCanvas
                         const pixel = trackCtx.getImageData(globalX, globalY, 1, 1).data;
                         const brightness = (pixel[0] + pixel[1] + pixel[2]) / 3;
-                        // Threshold hitam < 100
+                        // Threshold warna hitam < 100
                         this.sensorValues[i] = brightness < 100 ? 1 : 0; 
                     } else {
                         this.sensorValues[i] = 0;
@@ -413,7 +436,7 @@
                 if (activeCount > 0) {
                     this.currentError = error / activeCount;
                 } else {
-                    // Memory posisi terakhir jika keluar garis
+                    // Memory jika keluar garis: ingat error terakhir
                     this.currentError = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0);
                 }
                 
@@ -424,19 +447,20 @@
             update(dt) {
                 if (simulationState === States.IDLE || simulationState === States.FINISHED) return;
                 if (this.activeCounter >= counters.length) {
-                    simulationState = States.FINISHED;
-                    updateGlobalStatus();
+                    forceStopSim();
                     return;
                 }
 
                 this.readSensors();
                 const config = counters[this.activeCounter];
                 const startMode = document.getElementById('startMode').value;
-                const isLastCounter = (this.activeCounter === counters.length - 1);
+                
+                // Mode pembatasan hanya berlaku untuk COUNTER TERAKHIR
+                const isLastCounter = (this.activeCounter === counters.length - 1); 
 
                 let vl = 0;
                 let vr = 0;
-                const dtSec = dt / 1000; // detik
+                const dtSec = dt / 1000;
 
                 switch (simulationState) {
                     case States.TURNING:
@@ -444,10 +468,10 @@
                         vr = config.vTurnR;
                         
                         this.stateTimer += dt;
-                        // Turn minimal 200ms agar keluar dari garis awal, lalu berhenti saat sensor tengah kena garis
+                        // Turn open-loop, minimal 200ms keluar garis, lalu cari garis kembali (sensor tengah = 1)
                         if (this.stateTimer > 200 && this.sensorValues[2] === 1) {
                             if (isLastCounter && startMode === 'AC') {
-                                forceStopSim();
+                                forceStopSim(); // Stop jika ini counter terakhir dan mode AC
                             } else {
                                 simulationState = States.RUNNING_SA;
                                 this.stateTimer = 0;
@@ -460,17 +484,19 @@
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.ta) {
                             if (isLastCounter && startMode === 'SA') {
-                                forceStopSim();
+                                forceStopSim(); // Stop jika ini counter terakhir dan mode SA
                             } else {
                                 simulationState = States.RUNNING_SB;
                                 this.stateTimer = 0;
+                                this.integral = 0;
                             }
                         } else {
-                            // PID Calculation SA Realistis
                             const errA = this.calculateError();
+                            
+                            // PID Calculation
                             const pA = errA * config.kp;
                             this.integral += errA;
-                            this.integral = Math.max(-50, Math.min(50, this.integral)); // Anti-Windup
+                            this.integral = Math.max(-100, Math.min(100, this.integral)); // Anti-Windup
                             const iA = this.integral * config.ki;
                             const dA = (errA - this.lastError) * config.kd;
                             const pidOutputA = pA + iA + dA;
@@ -485,16 +511,17 @@
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.tb) {
                             if (isLastCounter) {
-                                forceStopSim();
+                                forceStopSim(); // Akhir dari keseluruhan simulasi
                             } else {
-                                this.nextCounter();
+                                this.nextCounter(); // Lanjut ke counter berikutnya
                             }
                         } else {
-                            // PID Calculation SB Realistis
                             const errB = this.calculateError();
+                            
+                            // PID Calculation
                             const pB = errB * config.kp;
                             this.integral += errB;
-                            this.integral = Math.max(-50, Math.min(50, this.integral)); // Anti-Windup
+                            this.integral = Math.max(-100, Math.min(100, this.integral)); // Anti-Windup
                             const iB = this.integral * config.ki;
                             const dB = (errB - this.lastError) * config.kd;
                             const pidOutputB = pB + iB + dB;
@@ -508,19 +535,20 @@
 
                 this.updateUI();
 
-                // Membatasi kecepatan motor (PWM max 255) agar realistis dan tidak glitch
+                // PWM Limit (Max 255, Min -255 layaknya mikrokontroler asli)
                 vl = Math.max(-255, Math.min(255, vl));
                 vr = Math.max(-255, Math.min(255, vr));
 
-                // Scale down speed visual agar tidak terlalu cepat di layar
+                // Visual downscale (karena kalau 255 piksel/frame terlalu ngebut untuk visualisasi 60fps)
                 const visualScale = 0.5; 
                 vl *= visualScale;
                 vr *= visualScale;
 
                 // Kinematics Differential Drive
                 const v = (vr + vl) / 2;
-                // PERBAIKAN: Rumus putaran diperbaiki (Kiri dikurangi Kanan) agar arahnya benar
-                const omega = (vl - vr) / this.wheelBase;
+                // PERBAIKAN: Putaran roda Kiri dikurang Kanan. (Agar belok searah jarum jam saat vl > vr)
+                // Ditambahkan faktor scale agar rasio belokan seimbang saat robot dibesarkan.
+                const omega = (vl - vr) / (this.wheelBase * this.scale);
 
                 this.angle += omega * dtSec;
                 this.x += v * Math.cos(this.angle) * dtSec;
@@ -556,6 +584,9 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
+                
+                // Menerapkan skala dari UI secara visual
+                ctx.scale(this.scale, this.scale); 
 
                 // Body Robot
                 ctx.fillStyle = '#1e3a8a'; // Blue-900
@@ -564,16 +595,16 @@
                 ctx.fillRect(-this.length / 2, -this.width / 2, this.length, this.width);
                 ctx.shadowBlur = 0;
 
-                // Roda (Diperbesar)
+                // Roda
                 ctx.fillStyle = '#111827'; // Gray-900
                 ctx.fillRect(-15, -this.width / 2 - 8, 30, 8); // Kiri
                 ctx.fillRect(-15, this.width / 2, 30, 8); // Kanan
 
-                // Papan Sensor Depan (Diperbesar dan digeser)
+                // Papan Sensor Depan
                 ctx.fillStyle = '#064e3b'; // Emerald-900
                 ctx.fillRect(30, -35, 10, 70);
 
-                // Titik Sensor (Sedikit lebih besar)
+                // Titik Lampu Sensor
                 for (let i = 0; i < 5; i++) {
                     ctx.beginPath();
                     ctx.arc(this.sensors[i].x, this.sensors[i].y, 4, 0, Math.PI * 2);
@@ -582,7 +613,7 @@
                     ctx.closePath();
                 }
                 
-                // Indikator Arah (Diperpanjang)
+                // Garis Indikator Arah Panah
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
                 ctx.lineTo(45, 0);
@@ -610,11 +641,9 @@
         }
 
         function startSimulation() {
-            if (!trackLoaded) {
-                alert("Gambar lintasan belum siap atau error. Silakan muat gambar manual.");
-                return;
-            }
+            if (!trackLoaded) return;
             
+            // Perbarui data settingan terbaru sebelum mulai
             counters.forEach((c, i) => updateCounterData(i));
             
             robot.reset(
@@ -644,12 +673,11 @@
         function drawScene() {
             if (!trackLoaded) return;
             
-            // Bersihkan kanvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Gambar ulang track yang bersih dari trackCanvas
+            // Salin track bersih dari offline canvas
             ctx.drawImage(trackCanvas, 0, 0);
             
-            // Gambar robot di atasnya
+            // Gambar robot
             robot.draw(ctx);
         }
 
@@ -665,12 +693,12 @@
             animationId = requestAnimationFrame(animationLoop);
         }
 
-        // Pindahkan robot dengan klik mouse saat IDLE
+        // Relokasi posisi Robot Instan lewat Mouse saat Idle
         canvas.addEventListener('mousedown', (e) => {
             if (simulationState !== States.IDLE && simulationState !== States.FINISHED) return;
             
             const rect = canvas.getBoundingClientRect();
-            // Kalkulasi skala CSS vs ukuran internal canvas
+            // Rasio ukuran aktual layar melawan resolusi asli canvas
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
 
@@ -685,7 +713,7 @@
             drawScene();
         });
 
-        // Event Listeners Tombol
+        // Event Tombol Aksi
         document.getElementById('btnStart').addEventListener('click', startSimulation);
         document.getElementById('btnStop').addEventListener('click', stopSimulation);
         document.getElementById('btnReset').addEventListener('click', () => {
@@ -698,7 +726,7 @@
             drawScene();
         });
 
-        // Init
+        // Memulai Render UI awal
         renderCounters();
     </script>
 </body>
