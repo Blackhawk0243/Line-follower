@@ -11,19 +11,20 @@
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        canvas {
+            transform-origin: top left;
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-200 h-screen w-screen overflow-hidden flex font-sans">
 
-    <!-- Modal Notifikasi CORS / Error -->
-    <div id="errorModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+    <!-- Modal Notifikasi CORS / Error Akses Piksel -->
+    <div id="errorModal" class="fixed inset-0 bg-black/80 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-lg border border-rose-500 text-center">
             <div class="text-rose-500 text-5xl mb-4">⚠️</div>
-            <h2 class="text-2xl font-bold text-white mb-2">Akses Piksel Diblokir Browser</h2>
+            <h2 class="text-2xl font-bold text-white mb-2">Akses Piksel Diblokir</h2>
             <p class="text-slate-300 mb-6 text-sm leading-relaxed">
-                Browser mencegah robot untuk "melihat" warna pada lintasan karena Anda membuka file ini dengan klik ganda (URL <code>file://</code>). <br><br>
-                <b>Solusi Lokal:</b> Gunakan ekstensi <span class="text-blue-400 font-bold">Live Server</span> di VS Code.<br>
-                <b>Solusi Vercel:</b> Jika Anda sudah deploy ini ke Vercel/Github, peringatan ini tidak akan muncul.
+                Terjadi kesalahan CORS. Ini biasanya terjadi jika Anda membuka file secara lokal ganda (file://). Pastikan membuka via Vercel / Live Server.
             </p>
             <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition-colors">
                 Tutup Peringatan
@@ -47,7 +48,7 @@
         <div class="p-5 border-b border-slate-700 space-y-4">
             <div>
                 <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start Mode</label>
-                <select id="startMode" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white">
+                <select id="startMode" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white cursor-pointer">
                     <option value="AC">AC (Hanya Belok lalu Stop)</option>
                     <option value="SA">SA (Belok + Speed A)</option>
                     <option value="SB" selected>SB (Belok + Speed A + Speed B)</option>
@@ -88,27 +89,42 @@
 
         <!-- Footer Add Button -->
         <div class="p-3 border-t border-slate-700 bg-slate-800">
-            <button onclick="addCounter()" class="w-full py-3 border border-dashed border-slate-500 text-slate-400 hover:text-white hover:border-blue-400 hover:bg-blue-900/20 rounded-lg transition-all flex items-center justify-center gap-2 font-bold">
+            <button onclick="addCounter()" class="w-full py-3 border border-dashed border-slate-500 text-slate-400 hover:text-white hover:border-blue-400 hover:bg-blue-900/20 rounded-lg transition-all flex items-center justify-center gap-2 font-bold cursor-pointer">
                 <span>+</span> Tambah Counter
             </button>
         </div>
     </div>
 
     <!-- Area Simulasi (Kanan) -->
-    <div class="flex-1 bg-slate-200 relative overflow-hidden flex items-center justify-center" id="canvasContainer">
-        <!-- Text peringatan jika gambar tidak termuat secara visual -->
-        <div id="imageErrorText" class="absolute text-slate-500 font-bold text-xl hidden flex-col items-center gap-4">
-            <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            Gambar "Lapangan_SD.jpeg" tidak ditemukan.
+    <div class="flex-1 bg-slate-800 relative overflow-hidden flex items-center justify-center" id="canvasContainer">
+        
+        <!-- Peringatan Gambar Error & Fitur Upload Manual (Jalan Tikus) -->
+        <div id="imageErrorUI" class="absolute z-20 flex-col items-center justify-center gap-4 bg-slate-900 p-8 rounded-2xl shadow-2xl border border-rose-500 max-w-md text-center hidden">
+            <div class="w-20 h-20 bg-rose-500/20 rounded-full flex items-center justify-center mb-2 mx-auto">
+                <svg class="w-10 h-10 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <h2 class="text-xl font-bold text-white">Gambar Gagal Dimuat Dari Server</h2>
+            <p class="text-slate-400 text-sm">Server Vercel belum mendeteksi file <code>Lapangan_SD.jpeg</code>.</p>
+            
+            <div class="w-full h-px bg-slate-700 my-2"></div>
+            
+            <p class="text-emerald-400 font-bold text-sm mb-2">Gunakan Solusi Cepat Ini:</p>
+            <p class="text-slate-400 text-xs mb-4">Pilih file gambar lintasannya langsung dari perangkat Anda. Simulasi akan langsung berjalan!</p>
+            
+            <label class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg cursor-pointer transition-colors font-semibold w-full block text-center shadow-lg uppercase text-sm tracking-wider">
+                Pilih File Lapangan_SD.jpeg
+                <input type="file" class="hidden" accept="image/jpeg, image/png, image/jpg" onchange="handleManualUpload(event)">
+            </label>
         </div>
 
         <!-- Canvas untuk digambar dan dilihat user -->
-        <canvas id="simCanvas" class="shadow-2xl rounded bg-white max-h-full max-w-full object-contain cursor-crosshair"></canvas>
+        <canvas id="simCanvas" class="shadow-2xl rounded bg-white max-h-[95%] max-w-[95%] object-contain cursor-crosshair hidden"></canvas>
+        
         <!-- Canvas tersembunyi untuk membaca warna piksel lintasan secara akurat -->
         <canvas id="hiddenCanvas" class="hidden"></canvas>
         
         <!-- Sensor UI Overlay -->
-        <div class="absolute top-5 right-5 bg-slate-900/90 backdrop-blur text-white p-4 rounded-xl border border-slate-700 shadow-xl w-64 pointer-events-none">
+        <div class="absolute top-5 right-5 bg-slate-900/90 backdrop-blur text-white p-4 rounded-xl border border-slate-700 shadow-xl w-64 pointer-events-none z-10">
             <h3 class="text-sm font-bold text-slate-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-wider">Status Sensor</h3>
             <div class="flex justify-between mb-4">
                 <div id="s0" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
@@ -150,19 +166,14 @@
         const ctx = simCanvas.getContext('2d');
         const hiddenCanvas = document.getElementById('hiddenCanvas');
         const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
-        const canvasContainer = document.getElementById('canvasContainer');
         const statusText = document.getElementById('statusText');
+        const imageErrorUI = document.getElementById('imageErrorUI');
 
-        // Setup Gambar Lintasan
         let trackImage = new Image();
-        // HAPUS crossOrigin agar bisa diload secara lokal di Brave tanpa masalah file://
-        // trackImage.crossOrigin = "Anonymous"; 
-        trackImage.src = 'Lapangan_SD.jpeg'; 
-        
         let trackLoaded = false;
-        let animationId;
         let lastTime = 0;
         let isRunning = false;
+        let animationId = null;
 
         function renderCounters() {
             countersContainer.innerHTML = '';
@@ -172,7 +183,7 @@
                 div.innerHTML = `
                     <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <span class="bg-slate-700 text-xs px-2 py-1 rounded font-mono">#${index + 1}</span>
-                        <button onclick="removeCounter(${index})" class="text-slate-400 hover:text-rose-400" title="Hapus Counter">
+                        <button onclick="removeCounter(${index})" class="text-slate-400 hover:text-rose-400 cursor-pointer" title="Hapus Counter">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
                         </button>
                     </div>
@@ -180,7 +191,7 @@
                     <div class="space-y-4 mt-2">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Arah Belok</label>
-                            <select onchange="updateCounter(${index}, 'dir', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white">
+                            <select onchange="updateCounter(${index}, 'dir', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white cursor-pointer">
                                 <option value="maju" ${c.dir === 'maju' ? 'selected' : ''}>Maju Lurus</option>
                                 <option value="kanan" ${c.dir === 'kanan' ? 'selected' : ''}>Belok Kanan</option>
                                 <option value="kiri" ${c.dir === 'kiri' ? 'selected' : ''}>Belok Kiri</option>
@@ -221,7 +232,7 @@
                         </div>
 
                         <div class="border-t border-slate-700 pt-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-dashed border-slate-600">
-                            <label class="block text-[10px] font-bold text-emerald-500 mb-2 uppercase tracking-wider text-center">PID Settings</label>
+                            <label class="block text-[10px] font-bold text-emerald-500 mb-2 uppercase tracking-wider text-center">PID Settings (Line Follow)</label>
                             <div class="grid grid-cols-3 gap-2">
                                 <div>
                                     <label class="block text-[9px] font-bold text-slate-400 mb-0.5 text-center">KP</label>
@@ -265,7 +276,7 @@
         window.updateCounter = (index, field, value) => {
             if (field === 'dir') {
                 counters[index].dir = value;
-                // Auto-set nilai Default Kecepatan L & R berdasarkan arah yang dipilih
+                // Auto-set nilai Default Kecepatan L & R berdasarkan arah belok
                 if (value === 'maju') {
                     counters[index].vTurnL = 100;
                     counters[index].vTurnR = 100;
@@ -291,20 +302,18 @@
                 this.length = 50;
                 this.wheelBase = 35; 
                 
-                this.sensorDist = 25; // Jarak sensor dari pusat robot
-                this.sensorSpread = 12; // Jarak antar sensor
-                this.sensorValues = [0, 0, 0, 0, 0]; // 5 Sensors
-                this.sensorThreshold = 100; // Jika Rata-rata RGB < 100, dianggap garis hitam
+                this.sensorDist = 25; 
+                this.sensorSpread = 12; 
+                this.sensorValues = [0, 0, 0, 0, 0]; 
+                this.sensorThreshold = 100; 
                 
                 this.state = States.IDLE;
                 this.activeCounter = 0;
                 this.stateTimer = 0;
                 
-                // PID State
                 this.lastError = 0;
                 this.integral = 0;
                 this.currentError = 0;
-
                 this.corsAlerted = false;
             }
 
@@ -322,7 +331,6 @@
 
             getSensorPositions() {
                 const positions = [];
-                // Sensor dari S0 (kiri) ke S4 (kanan)
                 for (let i = -2; i <= 2; i++) {
                     const sx = this.x + this.sensorDist * Math.cos(this.angle) - (i * this.sensorSpread) * Math.sin(this.angle);
                     const sy = this.y + this.sensorDist * Math.sin(this.angle) + (i * this.sensorSpread) * Math.cos(this.angle);
@@ -339,30 +347,24 @@
                     const p = positions[i];
                     let isBlack = false;
 
-                    // Pastikan koordinat ada di dalam batas canvas
                     if (p.x >= 0 && p.x < hiddenCanvas.width && p.y >= 0 && p.y < hiddenCanvas.height) {
                         try {
-                            // Coba baca warna piksel dari hidden canvas
                             const pixel = hiddenCtx.getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data;
                             const avg = (pixel[0] + pixel[1] + pixel[2]) / 3;
                             if (avg < this.sensorThreshold && pixel[3] > 100) {
                                 isBlack = true;
                             }
                         } catch (e) {
-                            // JIKA ERROR (CORS / Akses File Lokal ditolak browser)
                             if (!this.corsAlerted) {
                                 document.getElementById('errorModal').classList.remove('hidden');
                                 this.corsAlerted = true;
-                                isRunning = false; 
-                                document.getElementById('btnStart').innerText = "Start";
-                                document.getElementById('btnStart').classList.replace('bg-amber-600', 'bg-emerald-600');
+                                forceStopSim();
                             }
                         }
                     }
                     this.sensorValues[i] = isBlack ? 1 : 0;
                 }
 
-                // Update UI Visual Sensor di Pojok Kanan Atas
                 for(let i=0; i<5; i++) {
                     const el = document.getElementById(`s${i}`);
                     if(this.sensorValues[i]) {
@@ -376,7 +378,6 @@
             }
 
             calculateError() {
-                // Bobot: S0=-2 (Kiri Jauh), S1=-1, S2=0 (Tengah), S3=1, S4=2 (Kanan Jauh)
                 const weights = [-2, -1, 0, 1, 2];
                 let error = 0;
                 let activeCount = 0;
@@ -389,9 +390,8 @@
                 }
                 
                 if (activeCount > 0) {
-                    this.currentError = error / activeCount; // Rata-rata dari sensor yang mendeteksi garis
+                    this.currentError = error / activeCount;
                 } else {
-                    // Jika robot keluar dari garis sepenuhnya, ingat error terakhir untuk berbelok tajam kembali
                     this.currentError = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0);
                 }
                 
@@ -412,15 +412,13 @@
 
                 switch (this.state) {
                     case States.TURNING:
-                        // Fase OPEN LOOP: Kecepatan kiri dan kanan di-hardcode sesuai input
                         vl = config.vTurnL;
                         vr = config.vTurnR;
                         
                         this.stateTimer += dt;
-                        // Logika Berhenti Belok: Jika sudah jalan min 200ms DAN sensor tengah mendeteksi garis hitam
                         if (this.stateTimer > 200 && this.sensorValues[2] === 1) {
                             if (startMode === 'AC') {
-                                this.nextCounter(); // Selesai belok, langsung lanjut counter berikutnya (Mode AC)
+                                this.nextCounter(); 
                             } else {
                                 this.state = States.RUNNING_SA;
                                 this.stateTimer = 0;
@@ -441,7 +439,6 @@
                             break;
                         }
                         
-                        // Kalkulasi PID untuk Speed A
                         const errA = this.calculateError();
                         const pA = errA * config.kp;
                         this.integral += errA * dtSec;
@@ -461,7 +458,6 @@
                             break;
                         }
 
-                        // Kalkulasi PID untuk Speed B
                         const errB = this.calculateError();
                         const pB = errB * config.kp;
                         this.integral += errB * dtSec;
@@ -477,8 +473,7 @@
 
                 this.updateUI();
 
-                // Hitung Pergerakan (Kinematika Differential Drive)
-                const scale = 0.5; // Perlambat visualisasi
+                const scale = 0.5; 
                 vl *= scale;
                 vr *= scale;
 
@@ -494,9 +489,7 @@
                 this.activeCounter++;
                 if (this.activeCounter >= counters.length) {
                     this.state = States.FINISHED;
-                    isRunning = false;
-                    document.getElementById('btnStart').innerText = "Start";
-                    document.getElementById('btnStart').classList.replace('bg-amber-600', 'bg-emerald-600');
+                    forceStopSim();
                 } else {
                     this.state = States.TURNING;
                     this.stateTimer = 0;
@@ -519,14 +512,14 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                // Body Robot (Kotak Hitam Kebiruan)
+                // Body Robot
                 ctx.fillStyle = '#1e293b'; 
                 ctx.strokeStyle = '#3b82f6';
                 ctx.lineWidth = 2;
                 ctx.fillRect(-this.length/2, -this.width/2, this.length, this.width);
                 ctx.strokeRect(-this.length/2, -this.width/2, this.length, this.width);
 
-                // Panah penunjuk arah depan
+                // Panah
                 ctx.fillStyle = '#3b82f6';
                 ctx.beginPath();
                 ctx.moveTo(-5, -10);
@@ -534,20 +527,20 @@
                 ctx.lineTo(-5, 10);
                 ctx.fill();
 
-                // Ban Kiri & Kanan (Hitam)
+                // Ban
                 ctx.fillStyle = '#0f172a';
                 ctx.fillRect(-this.length/4, -this.width/2 - 5, this.length/2, 6);
                 ctx.fillRect(-this.length/4, this.width/2 - 1, this.length/2, 6);
 
-                // Tiang Sensor di depan
+                // Tiang Sensor
                 ctx.fillStyle = '#0f172a';
                 ctx.fillRect(this.sensorDist - 2, -this.sensorSpread*2.5, 4, this.sensorSpread*5);
 
-                // Titik-titik Lampu Sensor
+                // Titik Sensor
                 for (let i = -2; i <= 2; i++) {
                     ctx.beginPath();
                     ctx.arc(this.sensorDist, i * this.sensorSpread, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = this.sensorValues[i+2] ? '#ef4444' : '#64748b'; // Merah jika deteksi hitam
+                    ctx.fillStyle = this.sensorValues[i+2] ? '#ef4444' : '#64748b'; 
                     ctx.fill();
                 }
 
@@ -557,52 +550,84 @@
 
         const robot = new Robot();
 
-        
-        trackImage.onload = () => {
-            // Ketika gambar berhasil dimuat
+        function loadTrackSuccess() {
+            if(trackImage.width === 0 || trackImage.height === 0) {
+                handleTrackError();
+                return;
+            }
+
             simCanvas.width = trackImage.width;
             simCanvas.height = trackImage.height;
             hiddenCanvas.width = trackImage.width;
             hiddenCanvas.height = trackImage.height;
 
-            // Cetak ke canvas tersembunyi untuk dibaca warnanya
+            // Cetak ke canvas tersembunyi
             hiddenCtx.drawImage(trackImage, 0, 0);
             
             trackLoaded = true;
-            document.getElementById('imageErrorText').classList.add('hidden');
+            imageErrorUI.classList.add('hidden');
+            imageErrorUI.classList.remove('flex');
+            simCanvas.classList.remove('hidden');
             
-            // Set UI awal
+            statusText.innerText = "IDLE";
+            statusText.className = "text-slate-400 font-bold";
+
             robot.reset(
                 Number(document.getElementById('startX').value),
                 Number(document.getElementById('startY').value),
                 Number(document.getElementById('startAngle').value)
             );
             drawSimulation();
+        }
+
+        function handleTrackError() {
+            trackLoaded = false;
+            statusText.innerText = "ERROR FILE!";
+            statusText.className = "text-rose-500 font-bold";
+            simCanvas.classList.add('hidden');
+            
+            imageErrorUI.classList.remove('hidden');
+            imageErrorUI.classList.add('flex');
+        }
+
+        trackImage.onload = loadTrackSuccess;
+        trackImage.onerror = handleTrackError;
+
+        // Inisiasi pemuatan gambar dari server. 
+        // Menggunakan '?v=xxx' agar memaksa Vercel/Browser menghiraukan cache lama (hanya untuk memastikan gambar terambil).
+        trackImage.src = 'Lapangan_SD.jpeg?v=' + new Date().getTime(); 
+
+        // Fungsi Fitur Manual Upload (Solusi Cepat 100% Berhasil)
+        window.handleManualUpload = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                // Kita muat URL lokal ini ke image object
+                trackImage.src = url;
+            }
         };
 
-        trackImage.onerror = () => {
-            // Jika nama file salah / tidak ada
-            trackLoaded = false;
-            statusText.innerText = "GAMBAR ERROR";
-            statusText.className = "text-rose-500 font-bold";
-            document.getElementById('imageErrorText').classList.remove('hidden');
-        };
+        function forceStopSim() {
+            isRunning = false;
+            const btn = document.getElementById('btnStart');
+            btn.innerText = "Start";
+            btn.classList.replace('bg-amber-600', 'bg-emerald-600');
+            btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
+        }
 
         function startSimulation() {
             if (!trackLoaded) {
-                // Beri efek visual jika dipencet saat gambar belum ada
-                document.getElementById('imageErrorText').classList.add('animate-pulse', 'text-rose-500');
-                setTimeout(() => document.getElementById('imageErrorText').classList.remove('animate-pulse', 'text-rose-500'), 500);
+                // Flash tombol jika ditekan sebelum gambar ada
+                const btn = document.getElementById('btnStart');
+                btn.classList.replace('bg-emerald-600', 'bg-rose-600');
+                setTimeout(() => btn.classList.replace('bg-rose-600', 'bg-emerald-600'), 300);
                 return;
             }
             
             const btn = document.getElementById('btnStart');
             if (isRunning) {
                 // Pause Game
-                isRunning = false;
-                btn.innerText = "Resume";
-                btn.classList.replace('bg-amber-600', 'bg-emerald-600');
-                btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
+                forceStopSim();
             } else {
                 // Start / Resume Game
                 isRunning = true;
@@ -615,21 +640,18 @@
                     const sy = Number(document.getElementById('startY').value);
                     const sa = Number(document.getElementById('startAngle').value);
                     robot.reset(sx, sy, sa);
-                    robot.state = States.TURNING; // Mulai langsung masuk mode open-loop counter ke-1
+                    robot.state = States.TURNING;
                 }
                 
                 lastTime = performance.now();
-                requestAnimationFrame(gameLoop);
+                if (!animationId) {
+                    animationId = requestAnimationFrame(gameLoop);
+                }
             }
         }
 
         function stopSimulation() {
-            isRunning = false;
-            const btn = document.getElementById('btnStart');
-            btn.innerText = "Start";
-            btn.classList.replace('bg-amber-600', 'bg-emerald-600');
-            btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
-            
+            forceStopSim();
             const sx = Number(document.getElementById('startX').value);
             const sy = Number(document.getElementById('startY').value);
             const sa = Number(document.getElementById('startAngle').value);
@@ -657,33 +679,36 @@
         }
 
         function gameLoop(timestamp) {
-            if (!isRunning) return;
+            if (!isRunning) {
+                animationId = null;
+                return;
+            }
 
             const dt = timestamp - lastTime;
             lastTime = timestamp;
 
-            // Batasi dt maksimal agar jika user pindah tab browser, pergerakan tidak meloncat jauh
             if (dt < 100) {
                 robot.update(dt);
             }
 
             drawSimulation();
-
-            if (isRunning) {
-                requestAnimationFrame(gameLoop);
-            }
+            animationId = requestAnimationFrame(gameLoop);
         }
 
         function drawSimulation() {
-            // Bersihkan kanvas
+            // Jika gambar belum ada ukurannya, jangan gambar agar tidak error
+            if (simCanvas.width === 0) return;
+            
             ctx.clearRect(0, 0, simCanvas.width, simCanvas.height);
             
-            // Gambar Background Lintasan
             if (trackLoaded) {
-                ctx.drawImage(trackImage, 0, 0);
+                try {
+                    ctx.drawImage(trackImage, 0, 0);
+                } catch(e) {
+                    console.error("Gagal menggambar ke canvas:", e);
+                }
             }
             
-            // Gambar Robot di atas lintasan
             robot.draw(ctx);
         }
 
@@ -694,7 +719,6 @@
             if (!trackLoaded || (robot.state !== States.IDLE && robot.state !== States.FINISHED)) return;
             
             const rect = simCanvas.getBoundingClientRect();
-            // Kalkulasi skala, karena object-contain membuat ukuran render beda dengan ukuran pixel asli
             const scaleX = simCanvas.width / rect.width;
             const scaleY = simCanvas.height / rect.height;
             
