@@ -3,267 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Line Follower Pro Sim</title>
+    <title>Line Follower Pro Simulation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Mengamankan scrollbar agar rapi */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        canvas {
-            transform-origin: top left;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Mencegah scrollbar di body */
+        }
+        /* Custom scrollbar untuk sidebar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563; 
         }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-200 h-screen w-screen overflow-hidden flex font-sans">
+<body class="bg-gray-100 text-gray-800 flex h-screen w-screen m-0 p-0">
 
-    <!-- Modal Notifikasi CORS / Error Akses Piksel -->
-    <div id="errorModal" class="fixed inset-0 bg-black/80 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-lg border border-rose-500 text-center">
-            <div class="text-rose-500 text-5xl mb-4">⚠️</div>
-            <h2 class="text-2xl font-bold text-white mb-2">Akses Piksel Diblokir</h2>
-            <p class="text-slate-300 mb-6 text-sm leading-relaxed">
-                Terjadi kesalahan CORS. Ini biasanya terjadi jika Anda membuka file secara lokal ganda (file://). Pastikan membuka via Vercel / Live Server.
-            </p>
-            <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="px-6 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold transition-colors">
-                Tutup Peringatan
-            </button>
-        </div>
-    </div>
-
-    <!-- Sidebar Konfigurasi (Kiri) -->
-    <div class="w-[400px] h-full bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-10 shrink-0">
-        
+    <div class="w-96 bg-gray-900 text-gray-300 flex flex-col shadow-2xl h-full flex-shrink-0 relative z-10">
         <!-- Header -->
-        <div class="p-5 border-b border-slate-700 bg-slate-800/50">
+        <div class="p-5 border-b border-gray-800 bg-gray-950">
             <h1 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
                 Line Follower Pro
             </h1>
-            <p class="text-xs text-slate-400 mt-1">Simulasi Konfigurasi Counter & PID</p>
+            <p class="text-xs text-gray-500 mt-1">Simulasi Konfigurasi Counter & PID</p>
         </div>
 
         <!-- Global Settings -->
-        <div class="p-5 border-b border-slate-700 space-y-4">
+        <div class="p-4 border-b border-gray-800 space-y-4">
             <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start Mode</label>
-                <select id="startMode" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white cursor-pointer">
-                    <option value="AC">AC (Hanya Belok lalu Stop)</option>
+                <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start Mode</label>
+                <select id="startMode" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <option value="AC">AC (Hanya Belok)</option>
                     <option value="SA">SA (Belok + Speed A)</option>
                     <option value="SB" selected>SB (Belok + Speed A + Speed B)</option>
                 </select>
             </div>
-            
-            <div class="grid grid-cols-3 gap-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start X</label>
-                    <input type="number" id="startX" value="430" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white">
+
+            <div class="flex gap-2">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start X</label>
+                    <input type="number" id="startX" value="430" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start Y</label>
-                    <input type="number" id="startY" value="1113" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start Y</label>
+                    <input type="number" id="startY" value="1113" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Sudut (&deg;)</label>
-                    <input type="number" id="startAngle" value="180" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white">
+                <div class="flex-1">
+                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Sudut (°)</label>
+                    <input type="number" id="startAngle" value="180" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
             </div>
 
-            <div class="flex gap-2 pt-2">
-                <button id="btnStart" onclick="startSimulation()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded transition-colors shadow-lg">Start</button>
-                <button onclick="stopSimulation()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 px-4 rounded transition-colors shadow-lg">Stop</button>
-                <button onclick="resetSimulation()" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded transition-colors shadow-lg">Reset</button>
+            <div class="flex gap-2">
+                <button id="btnStart" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded shadow">Start</button>
+                <button id="btnStop" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 px-4 rounded shadow">Stop</button>
+                <button id="btnReset" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded shadow">Reset</button>
             </div>
             
-            <div class="flex justify-between items-center text-xs font-mono bg-slate-950 p-2 rounded border border-slate-800">
-                <span>Status: <span id="statusText" class="text-yellow-400 font-bold">MEMUAT GAMBAR...</span></span>
-                <span>Counter Aktif: <span id="activeCounterText" class="text-blue-400 font-bold">-</span></span>
+            <div class="flex justify-between items-center text-xs mt-2 bg-gray-950 p-2 rounded border border-gray-800">
+                <span class="text-gray-400">Status: <span id="statusText" class="font-mono text-blue-400 font-bold">IDLE</span></span>
+                <span class="text-gray-400">Counter Aktif: <span id="activeCounterText" class="font-mono text-yellow-400 font-bold">-</span></span>
+            </div>
+            
+            <!-- Fallback Upload Gambar -->
+            <div class="pt-2 border-t border-gray-800">
+                 <p class="text-[10px] text-gray-500 mb-1">Jika lintasan gagal dimuat/putih:</p>
+                 <input type="file" id="imageUpload" accept="image/jpeg, image/png" class="hidden">
+                 <button onclick="document.getElementById('imageUpload').click()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs text-gray-300 py-1.5 rounded transition">
+                     📂 Pilih File Lintasan Manual
+                 </button>
             </div>
         </div>
 
-        <!-- Counters Container -->
-        <div id="countersContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
-            <!-- Counters will be injected here via JS -->
+        <!-- Counters List -->
+        <div id="countersContainer" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Counter Cards akan di-generate oleh JS -->
         </div>
 
-        <!-- Footer Add Button -->
-        <div class="p-3 border-t border-slate-700 bg-slate-800">
-            <button onclick="addCounter()" class="w-full py-3 border border-dashed border-slate-500 text-slate-400 hover:text-white hover:border-blue-400 hover:bg-blue-900/20 rounded-lg transition-all flex items-center justify-center gap-2 font-bold cursor-pointer">
+        <!-- Add Counter Button -->
+        <div class="p-4 border-t border-gray-800 bg-gray-950">
+            <button onclick="addCounter()" class="w-full border border-dashed border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 hover:bg-gray-800 py-3 rounded-lg font-medium transition flex justify-center items-center gap-2">
                 <span>+</span> Tambah Counter
             </button>
         </div>
     </div>
 
-    <!-- Area Simulasi (Kanan) -->
-    <div class="flex-1 bg-slate-800 relative overflow-hidden flex items-center justify-center" id="canvasContainer">
+    <div class="flex-1 relative bg-gray-200 flex justify-center items-center overflow-hidden" id="canvasWrapper">
+        <div id="loadingOverlay" class="absolute inset-0 bg-gray-900 flex flex-col justify-center items-center z-20 transition-opacity">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+            <p class="text-gray-300 font-medium">Memuat dan Menyesuaikan Lintasan...</p>
+        </div>
         
-        <!-- Peringatan Gambar Error & Fitur Upload Manual (Jalan Tikus) -->
-        <div id="imageErrorUI" class="absolute z-20 flex-col items-center justify-center gap-4 bg-slate-900 p-8 rounded-2xl shadow-2xl border border-rose-500 max-w-md text-center hidden">
-            <div class="w-20 h-20 bg-rose-500/20 rounded-full flex items-center justify-center mb-2 mx-auto">
-                <svg class="w-10 h-10 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            </div>
-            <h2 class="text-xl font-bold text-white">Gambar Gagal Dimuat Dari Server</h2>
-            <p class="text-slate-400 text-sm">Server Vercel belum mendeteksi file <code>Lapangan_SD.jpeg</code>.</p>
-            
-            <div class="w-full h-px bg-slate-700 my-2"></div>
-            
-            <p class="text-emerald-400 font-bold text-sm mb-2">Gunakan Solusi Cepat Ini:</p>
-            <p class="text-slate-400 text-xs mb-4">Pilih file gambar lintasannya langsung dari perangkat Anda. Simulasi akan langsung berjalan!</p>
-            
-            <label class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg cursor-pointer transition-colors font-semibold w-full block text-center shadow-lg uppercase text-sm tracking-wider">
-                Pilih File Lapangan_SD.jpeg
-                <input type="file" class="hidden" accept="image/jpeg, image/png, image/jpg" onchange="handleManualUpload(event)">
-            </label>
+        <div id="errorOverlay" class="absolute inset-0 bg-gray-900 flex flex-col justify-center items-center z-20 hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-rose-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <p class="text-white font-bold text-xl mb-2">Gambar Lintasan Gagal Dimuat</p>
+            <p class="text-gray-400 text-sm mb-4">File 'Lapangan_SD.jpeg' tidak ditemukan di server/folder.</p>
+            <button onclick="document.getElementById('imageUpload').click()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded shadow">
+                Upload Manual Sekarang
+            </button>
         </div>
 
-        <!-- Canvas untuk digambar dan dilihat user -->
-        <canvas id="simCanvas" class="shadow-2xl rounded bg-white max-h-[95%] max-w-[95%] object-contain cursor-crosshair hidden"></canvas>
-        
-        <!-- Canvas tersembunyi untuk membaca warna piksel lintasan secara akurat -->
-        <canvas id="hiddenCanvas" class="hidden"></canvas>
+        <canvas id="mainCanvas" class="shadow-2xl bg-white max-w-full max-h-full object-contain cursor-crosshair"></canvas>
         
         <!-- Sensor UI Overlay -->
-        <div class="absolute top-5 right-5 bg-slate-900/90 backdrop-blur text-white p-4 rounded-xl border border-slate-700 shadow-xl w-64 pointer-events-none z-10">
-            <h3 class="text-sm font-bold text-slate-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-wider">Status Sensor</h3>
-            <div class="flex justify-between mb-4">
-                <div id="s0" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
-                <div id="s1" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
-                <div id="s2" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
-                <div id="s3" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
-                <div id="s4" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors shadow-inner"></div>
+        <div class="absolute top-4 right-4 bg-gray-900/90 text-white p-4 rounded-xl shadow-lg border border-gray-700 backdrop-blur-sm pointer-events-none">
+            <div class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Status Sensor</div>
+            <div class="flex gap-2 mb-4 justify-center">
+                <div class="sensor-indicator w-6 h-6 rounded-full border-2 border-gray-600" id="sens0"></div>
+                <div class="sensor-indicator w-6 h-6 rounded-full border-2 border-gray-600" id="sens1"></div>
+                <div class="sensor-indicator w-6 h-6 rounded-full border-2 border-gray-600" id="sens2"></div>
+                <div class="sensor-indicator w-6 h-6 rounded-full border-2 border-gray-600" id="sens3"></div>
+                <div class="sensor-indicator w-6 h-6 rounded-full border-2 border-gray-600" id="sens4"></div>
             </div>
-            <div class="flex justify-between text-xs font-mono text-slate-400">
-                <p>PID Error:</p>
-                <p id="pidErrorText" class="font-bold text-white">0.00</p>
+            <div class="flex justify-between items-end border-t border-gray-700 pt-2">
+                <span class="text-xs text-gray-400">PID Error:</span>
+                <span id="pidErrorText" class="font-mono font-bold text-lg text-white">0.00</span>
             </div>
-            <p class="text-[10px] text-slate-500 mt-2 text-center">Klik canvas untuk memindah robot</p>
+            <div class="text-[10px] text-gray-500 mt-2 text-center">Klik canvas untuk memindah robot</div>
         </div>
     </div>
 
     <script>
-        const States = {
-            IDLE: 'IDLE',
-            TURNING: 'TURNING', // Open Loop Belok
-            RUNNING_SA: 'RUNNING_SA', // PID Mode SA
-            RUNNING_SB: 'RUNNING_SB', // PID Mode SB
-            FINISHED: 'FINISHED'
-        };
-
-        // Konfigurasi Default Counter Pertama
+        // Data Struktur Counter
         let counters = [
-            {
-                dir: 'maju',
-                vTurnL: 100, vTurnR: 100,
-                sa: 50, ta: 1000,
-                sb: 80, tb: 2000,
-                kp: 60.0, ki: 0.05, kd: 10.0
-            }
+            { dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 50, ta: 1000, sb: 80, tb: 2000, kp: 25.0, ki: 0.0, kd: 15.0 }
         ];
 
-        const countersContainer = document.getElementById('countersContainer');
-        const simCanvas = document.getElementById('simCanvas');
-        const ctx = simCanvas.getContext('2d');
-        const hiddenCanvas = document.getElementById('hiddenCanvas');
-        const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
-        const statusText = document.getElementById('statusText');
-        const imageErrorUI = document.getElementById('imageErrorUI');
-
-        let trackImage = new Image();
+        // State Simulator
+        const States = { IDLE: 'IDLE', TURNING: 'TURNING', RUNNING_SA: 'RUNNING_SA', RUNNING_SB: 'RUNNING_SB', FINISHED: 'FINISHED' };
+        let simulationState = States.IDLE;
+        
+        // Canvas Setup
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Offscreen canvas khusus untuk baca garis lintasan tanpa terhalang body robot
+        const trackCanvas = document.createElement('canvas');
+        const trackCtx = trackCanvas.getContext('2d', { willReadFrequently: true });
+        
         let trackLoaded = false;
+        let animationId;
         let lastTime = 0;
-        let isRunning = false;
-        let animationId = null;
+        let imgScale = 1;
 
+        // Auto-change default L/R when direction changes
+        function handleDirChange(index) {
+            const dirSelect = document.getElementById(`dir_${index}`);
+            const val = dirSelect.value;
+            let l = 100, r = 100;
+            if (val === 'kanan') { l = 80; r = -20; }
+            else if (val === 'kiri') { l = -20; r = 80; }
+            
+            document.getElementById(`tl_${index}`).value = l;
+            document.getElementById(`tr_${index}`).value = r;
+            updateCounterData(index);
+        }
+
+        // Render UI Counters
         function renderCounters() {
-            countersContainer.innerHTML = '';
-            counters.forEach((c, index) => {
-                const div = document.createElement('div');
-                div.className = 'bg-slate-800 border border-slate-700 rounded-lg p-4 relative group';
-                div.innerHTML = `
-                    <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span class="bg-slate-700 text-xs px-2 py-1 rounded font-mono">#${index + 1}</span>
-                        <button onclick="removeCounter(${index})" class="text-slate-400 hover:text-rose-400 cursor-pointer" title="Hapus Counter">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-                        </button>
-                    </div>
+            const container = document.getElementById('countersContainer');
+            container.innerHTML = '';
+            
+            counters.forEach((c, i) => {
+                const card = document.createElement('div');
+                card.className = "bg-gray-800 rounded-lg p-4 border border-gray-700 relative";
+                card.innerHTML = `
+                    <div class="absolute top-2 right-2 bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded font-mono">#${i + 1}</div>
+                    ${counters.length > 1 ? `<button onclick="removeCounter(${i})" class="absolute top-2 right-12 text-rose-400 hover:text-rose-300 text-xs font-bold bg-rose-400/10 px-2 py-0.5 rounded">Hapus</button>` : ''}
                     
-                    <div class="space-y-4 mt-2">
+                    <div class="mb-3 mt-4">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Arah Belok (Memicu Counter)</label>
+                        <select id="dir_${i}" onchange="handleDirChange(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
+                            <option value="maju" ${c.dir==='maju'?'selected':''}>Maju Lurus</option>
+                            <option value="kanan" ${c.dir==='kanan'?'selected':''}>Belok Kanan</option>
+                            <option value="kiri" ${c.dir==='kiri'?'selected':''}>Belok Kiri</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Arah Belok</label>
-                            <select onchange="updateCounter(${index}, 'dir', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none text-white cursor-pointer">
-                                <option value="maju" ${c.dir === 'maju' ? 'selected' : ''}>Maju Lurus</option>
-                                <option value="kanan" ${c.dir === 'kanan' ? 'selected' : ''}>Belok Kanan</option>
-                                <option value="kiri" ${c.dir === 'kiri' ? 'selected' : ''}>Belok Kiri</option>
-                            </select>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn L</label>
+                            <input type="number" id="tl_${i}" value="${c.vTurnL}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Turn Speed L</label>
-                                <input type="number" onchange="updateCounter(${index}, 'vTurnL', this.value)" value="${c.vTurnL}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Turn Speed R</label>
-                                <input type="number" onchange="updateCounter(${index}, 'vTurnR', this.value)" value="${c.vTurnR}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn R</label>
+                            <input type="number" id="tr_${i}" value="${c.vTurnR}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
+                    </div>
 
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Speed A</label>
-                                <input type="number" onchange="updateCounter(${index}, 'sa', this.value)" value="${c.sa}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Timer A (ms)</label>
-                                <input type="number" onchange="updateCounter(${index}, 'ta', this.value)" value="${c.ta}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3 border-t border-gray-700 pt-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-emerald-400">Speed A</label>
+                            <input type="number" id="sa_${i}" value="${c.sa}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Speed B</label>
-                                <input type="number" onchange="updateCounter(${index}, 'sb', this.value)" value="${c.sb}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Timer B (ms)</label>
-                                <input type="number" onchange="updateCounter(${index}, 'tb', this.value)" value="${c.tb}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none text-white">
-                            </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-emerald-400">Timer A (ms)</label>
+                            <input type="number" id="ta_${i}" value="${c.ta}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
+                    </div>
 
-                        <div class="border-t border-slate-700 pt-3 mt-2 bg-slate-900/50 p-2 rounded-lg border border-dashed border-slate-600">
-                            <label class="block text-[10px] font-bold text-emerald-500 mb-2 uppercase tracking-wider text-center">PID Settings (Line Follow)</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5 text-center">KP</label>
-                                    <input type="number" step="0.1" onchange="updateCounter(${index}, 'kp', this.value)" value="${c.kp}" class="w-full bg-slate-800 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none text-white text-center">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5 text-center">KI</label>
-                                    <input type="number" step="0.01" onchange="updateCounter(${index}, 'ki', this.value)" value="${c.ki}" class="w-full bg-slate-800 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none text-white text-center">
-                                </div>
-                                <div>
-                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5 text-center">KD</label>
-                                    <input type="number" step="0.1" onchange="updateCounter(${index}, 'kd', this.value)" value="${c.kd}" class="w-full bg-slate-800 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none text-white text-center">
-                                </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-blue-400">Speed B</label>
+                            <input type="number" id="sb_${i}" value="${c.sb}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-blue-400">Timer B (ms)</label>
+                            <input type="number" id="tb_${i}" value="${c.tb}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-700 pt-3">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-2 uppercase text-purple-400">PID Settings (Line Follow)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="block text-[9px] text-gray-500 mb-0.5">KP</label>
+                                <input type="number" step="0.1" id="kp_${i}" value="${c.kp}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-sm text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-gray-500 mb-0.5">KI</label>
+                                <input type="number" step="0.01" id="ki_${i}" value="${c.ki}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-sm text-white">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] text-gray-500 mb-0.5">KD</label>
+                                <input type="number" step="0.1" id="kd_${i}" value="${c.kd}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1 text-sm text-white">
                             </div>
                         </div>
                     </div>
                 `;
-                countersContainer.appendChild(div);
+                container.appendChild(card);
             });
         }
 
+        window.updateCounterData = (index) => {
+            counters[index] = {
+                dir: document.getElementById(`dir_${index}`).value,
+                vTurnL: parseFloat(document.getElementById(`tl_${index}`).value) || 0,
+                vTurnR: parseFloat(document.getElementById(`tr_${index}`).value) || 0,
+                sa: parseFloat(document.getElementById(`sa_${index}`).value) || 0,
+                ta: parseFloat(document.getElementById(`ta_${index}`).value) || 0,
+                sb: parseFloat(document.getElementById(`sb_${index}`).value) || 0,
+                tb: parseFloat(document.getElementById(`tb_${index}`).value) || 0,
+                kp: parseFloat(document.getElementById(`kp_${index}`).value) || 0,
+                ki: parseFloat(document.getElementById(`ki_${index}`).value) || 0,
+                kd: parseFloat(document.getElementById(`kd_${index}`).value) || 0
+            };
+        };
+
         window.addCounter = () => {
-            counters.push({
-                dir: 'maju',
-                vTurnL: 100, vTurnR: 100,
-                sa: 50, ta: 1000,
-                sb: 80, tb: 2000,
-                kp: 60.0, ki: 0.05, kd: 10.0
-            });
+            counters.push({ dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 50, ta: 1000, sb: 80, tb: 2000, kp: 25.0, ki: 0.0, kd: 15.0 });
             renderCounters();
-            countersContainer.scrollTop = countersContainer.scrollHeight;
+            const container = document.getElementById('countersContainer');
+            setTimeout(() => container.scrollTop = container.scrollHeight, 10);
         };
 
         window.removeCounter = (index) => {
@@ -273,106 +279,118 @@
             }
         };
 
-        window.updateCounter = (index, field, value) => {
-            if (field === 'dir') {
-                counters[index].dir = value;
-                // Auto-set nilai Default Kecepatan L & R berdasarkan arah belok
-                if (value === 'maju') {
-                    counters[index].vTurnL = 100;
-                    counters[index].vTurnR = 100;
-                } else if (value === 'kanan') {
-                    counters[index].vTurnL = 80;
-                    counters[index].vTurnR = -20;
-                } else if (value === 'kiri') {
-                    counters[index].vTurnL = -20;
-                    counters[index].vTurnR = 80;
-                }
-                renderCounters(); 
-            } else {
-                counters[index][field] = Number(value);
+        const trackImg = new Image();
+        
+        function processLoadedImage(img) {
+            // Auto Resize jika gambar terlalu besar (Mencegah Crash 6MB)
+            const MAX_DIMENSION = 1500;
+            let targetW = img.width;
+            let targetH = img.height;
+
+            if (targetW > MAX_DIMENSION || targetH > MAX_DIMENSION) {
+                const ratio = Math.min(MAX_DIMENSION / targetW, MAX_DIMENSION / targetH);
+                targetW = Math.floor(targetW * ratio);
+                targetH = Math.floor(targetH * ratio);
             }
+
+            canvas.width = targetW;
+            canvas.height = targetH;
+            trackCanvas.width = targetW;
+            trackCanvas.height = targetH;
+
+            // Gambar ke track offline (bersih tanpa robot)
+            trackCtx.fillStyle = 'white';
+            trackCtx.fillRect(0, 0, targetW, targetH);
+            trackCtx.drawImage(img, 0, 0, targetW, targetH);
+            
+            // Gambar awal ke layar
+            drawScene();
+
+            trackLoaded = true;
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('errorOverlay').classList.add('hidden');
+        }
+
+        trackImg.onload = () => processLoadedImage(trackImg);
+
+        trackImg.onerror = () => {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('errorOverlay').classList.remove('hidden');
         };
+
+        // Memuat gambar dengan versi timestamp untuk bypass cache
+        trackImg.src = 'Lapangan_SD.jpeg?v=' + new Date().getTime();
+
+        // Fitur Manual Upload (Jika CORS/Vercel bermasalah)
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const tempImg = new Image();
+                    tempImg.onload = () => processLoadedImage(tempImg);
+                    tempImg.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
 
         class Robot {
             constructor() {
-                this.x = 0;
-                this.y = 0;
-                this.angle = 0;
-                this.width = 40;
-                this.length = 50;
-                this.wheelBase = 35; 
+                this.x = 430;
+                this.y = 1113;
+                this.angle = Math.PI; 
+                this.width = 30;
+                this.length = 40;
+                this.wheelBase = 35;
                 
-                this.sensorDist = 25; 
-                this.sensorSpread = 12; 
-                this.sensorValues = [0, 0, 0, 0, 0]; 
-                this.sensorThreshold = 100; 
+                this.sensors = [
+                    { x: 20, y: -20 }, { x: 20, y: -10 },
+                    { x: 20, y: 0 },
+                    { x: 20, y: 10 }, { x: 20, y: 20 }
+                ];
+                this.sensorValues = [0,0,0,0,0];
                 
-                this.state = States.IDLE;
                 this.activeCounter = 0;
                 this.stateTimer = 0;
                 
                 this.lastError = 0;
                 this.integral = 0;
                 this.currentError = 0;
-                this.corsAlerted = false;
             }
 
-            reset(x, y, angle) {
-                this.x = x;
-                this.y = y;
-                this.angle = (angle * Math.PI) / 180;
-                this.state = States.IDLE;
+            reset(sx, sy, sangle) {
+                this.x = parseFloat(sx);
+                this.y = parseFloat(sy);
+                this.angle = parseFloat(sangle) * Math.PI / 180;
                 this.activeCounter = 0;
                 this.stateTimer = 0;
                 this.lastError = 0;
                 this.integral = 0;
+                this.sensorValues = [0,0,0,0,0];
                 this.updateUI();
-            }
-
-            getSensorPositions() {
-                const positions = [];
-                for (let i = -2; i <= 2; i++) {
-                    const sx = this.x + this.sensorDist * Math.cos(this.angle) - (i * this.sensorSpread) * Math.sin(this.angle);
-                    const sy = this.y + this.sensorDist * Math.sin(this.angle) + (i * this.sensorSpread) * Math.cos(this.angle);
-                    positions.push({x: sx, y: sy});
-                }
-                return positions;
             }
 
             readSensors() {
                 if (!trackLoaded) return;
-                const positions = this.getSensorPositions();
                 
+                const cosA = Math.cos(this.angle);
+                const sinA = Math.sin(this.angle);
+
                 for (let i = 0; i < 5; i++) {
-                    const p = positions[i];
-                    let isBlack = false;
+                    const s = this.sensors[i];
+                    // Rotasi lokal ke global
+                    const globalX = this.x + (s.x * cosA - s.y * sinA);
+                    const globalY = this.y + (s.x * sinA + s.y * cosA);
 
-                    if (p.x >= 0 && p.x < hiddenCanvas.width && p.y >= 0 && p.y < hiddenCanvas.height) {
-                        try {
-                            const pixel = hiddenCtx.getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data;
-                            const avg = (pixel[0] + pixel[1] + pixel[2]) / 3;
-                            if (avg < this.sensorThreshold && pixel[3] > 100) {
-                                isBlack = true;
-                            }
-                        } catch (e) {
-                            if (!this.corsAlerted) {
-                                document.getElementById('errorModal').classList.remove('hidden');
-                                this.corsAlerted = true;
-                                forceStopSim();
-                            }
-                        }
-                    }
-                    this.sensorValues[i] = isBlack ? 1 : 0;
-                }
-
-                for(let i=0; i<5; i++) {
-                    const el = document.getElementById(`s${i}`);
-                    if(this.sensorValues[i]) {
-                        el.classList.remove('bg-slate-800', 'border-slate-500');
-                        el.classList.add('bg-rose-500', 'border-rose-400');
+                    if (globalX >= 0 && globalX < trackCanvas.width && globalY >= 0 && globalY < trackCanvas.height) {
+                        // Baca dari trackCanvas (lintasan bersih), bukan mainCanvas
+                        const pixel = trackCtx.getImageData(globalX, globalY, 1, 1).data;
+                        const brightness = (pixel[0] + pixel[1] + pixel[2]) / 3;
+                        // Threshold hitam < 100
+                        this.sensorValues[i] = brightness < 100 ? 1 : 0; 
                     } else {
-                        el.classList.add('bg-slate-800', 'border-slate-500');
-                        el.classList.remove('bg-rose-500', 'border-rose-400');
+                        this.sensorValues[i] = 0;
                     }
                 }
             }
@@ -392,6 +410,7 @@
                 if (activeCount > 0) {
                     this.currentError = error / activeCount;
                 } else {
+                    // Memory posisi terakhir jika keluar garis
                     this.currentError = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0);
                 }
                 
@@ -400,27 +419,34 @@
             }
 
             update(dt) {
-                if (this.state === States.IDLE || this.state === States.FINISHED || this.activeCounter >= counters.length) return;
+                if (simulationState === States.IDLE || simulationState === States.FINISHED) return;
+                if (this.activeCounter >= counters.length) {
+                    simulationState = States.FINISHED;
+                    updateGlobalStatus();
+                    return;
+                }
 
                 this.readSensors();
                 const config = counters[this.activeCounter];
                 const startMode = document.getElementById('startMode').value;
+                const isLastCounter = (this.activeCounter === counters.length - 1);
 
                 let vl = 0;
                 let vr = 0;
-                const dtSec = dt / 1000;
+                const dtSec = dt / 1000; // detik
 
-                switch (this.state) {
+                switch (simulationState) {
                     case States.TURNING:
                         vl = config.vTurnL;
                         vr = config.vTurnR;
                         
                         this.stateTimer += dt;
+                        // Turn minimal 200ms agar keluar dari garis awal, lalu berhenti saat sensor tengah kena garis
                         if (this.stateTimer > 200 && this.sensorValues[2] === 1) {
-                            if (startMode === 'AC') {
-                                this.nextCounter(); 
+                            if (isLastCounter && startMode === 'AC') {
+                                forceStopSim();
                             } else {
-                                this.state = States.RUNNING_SA;
+                                simulationState = States.RUNNING_SA;
                                 this.stateTimer = 0;
                                 this.integral = 0; 
                             }
@@ -430,53 +456,65 @@
                     case States.RUNNING_SA:
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.ta) {
-                            if (startMode === 'SA') {
-                                this.nextCounter();
-                            } else if (startMode === 'SB') {
-                                this.state = States.RUNNING_SB;
+                            if (isLastCounter && startMode === 'SA') {
+                                forceStopSim();
+                            } else {
+                                simulationState = States.RUNNING_SB;
                                 this.stateTimer = 0;
                             }
-                            break;
+                        } else {
+                            // PID Calculation SA Realistis
+                            const errA = this.calculateError();
+                            const pA = errA * config.kp;
+                            this.integral += errA;
+                            this.integral = Math.max(-50, Math.min(50, this.integral)); // Anti-Windup
+                            const iA = this.integral * config.ki;
+                            const dA = (errA - this.lastError) * config.kd;
+                            const pidOutputA = pA + iA + dA;
+                            
+                            vl = config.sa + pidOutputA;
+                            vr = config.sa - pidOutputA;
+                            this.lastError = errA;
                         }
-                        
-                        const errA = this.calculateError();
-                        const pA = errA * config.kp;
-                        this.integral += errA * dtSec;
-                        const iA = this.integral * config.ki;
-                        const dA = ((errA - this.lastError) / dtSec) * config.kd;
-                        const pidOutputA = pA + iA + dA;
-                        
-                        vl = config.sa + pidOutputA;
-                        vr = config.sa - pidOutputA;
-                        this.lastError = errA;
                         break;
 
                     case States.RUNNING_SB:
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.tb) {
-                            this.nextCounter();
-                            break;
+                            if (isLastCounter) {
+                                forceStopSim();
+                            } else {
+                                this.nextCounter();
+                            }
+                        } else {
+                            // PID Calculation SB Realistis
+                            const errB = this.calculateError();
+                            const pB = errB * config.kp;
+                            this.integral += errB;
+                            this.integral = Math.max(-50, Math.min(50, this.integral)); // Anti-Windup
+                            const iB = this.integral * config.ki;
+                            const dB = (errB - this.lastError) * config.kd;
+                            const pidOutputB = pB + iB + dB;
+                            
+                            vl = config.sb + pidOutputB;
+                            vr = config.sb - pidOutputB;
+                            this.lastError = errB;
                         }
-
-                        const errB = this.calculateError();
-                        const pB = errB * config.kp;
-                        this.integral += errB * dtSec;
-                        const iB = this.integral * config.ki;
-                        const dB = ((errB - this.lastError) / dtSec) * config.kd;
-                        const pidOutputB = pB + iB + dB;
-                        
-                        vl = config.sb + pidOutputB;
-                        vr = config.sb - pidOutputB;
-                        this.lastError = errB;
                         break;
                 }
 
                 this.updateUI();
 
-                const scale = 0.5; 
-                vl *= scale;
-                vr *= scale;
+                // Membatasi kecepatan motor (PWM max 255) agar realistis dan tidak glitch
+                vl = Math.max(-255, Math.min(255, vl));
+                vr = Math.max(-255, Math.min(255, vr));
 
+                // Scale down speed visual agar tidak terlalu cepat di layar
+                const visualScale = 0.5; 
+                vl *= visualScale;
+                vr *= visualScale;
+
+                // Kinematics Differential Drive
                 const v = (vr + vl) / 2;
                 const omega = (vr - vl) / this.wheelBase;
 
@@ -487,24 +525,27 @@
 
             nextCounter() {
                 this.activeCounter++;
-                if (this.activeCounter >= counters.length) {
-                    this.state = States.FINISHED;
-                    forceStopSim();
-                } else {
-                    this.state = States.TURNING;
+                if (this.activeCounter < counters.length) {
+                    simulationState = States.TURNING;
                     this.stateTimer = 0;
+                    this.integral = 0;
+                } else {
+                    forceStopSim();
                 }
-                this.updateUI();
+                updateGlobalStatus();
             }
 
             updateUI() {
-                statusText.innerText = this.state;
-                if(this.state === States.IDLE) statusText.className = "text-slate-400 font-bold";
-                else if(this.state === States.FINISHED) statusText.className = "text-emerald-400 font-bold";
-                else statusText.className = "text-yellow-400 font-bold";
-
-                document.getElementById('activeCounterText').innerText = 
-                    (this.state !== States.IDLE && this.state !== States.FINISHED) ? `#${this.activeCounter + 1}` : '-';
+                for (let i = 0; i < 5; i++) {
+                    const el = document.getElementById(`sens${i}`);
+                    if (this.sensorValues[i]) {
+                        el.classList.add('bg-rose-500');
+                        el.classList.remove('bg-transparent');
+                    } else {
+                        el.classList.remove('bg-rose-500');
+                        el.classList.add('bg-transparent');
+                    }
+                }
             }
 
             draw(ctx) {
@@ -513,36 +554,37 @@
                 ctx.rotate(this.angle);
 
                 // Body Robot
-                ctx.fillStyle = '#1e293b'; 
-                ctx.strokeStyle = '#3b82f6';
-                ctx.lineWidth = 2;
-                ctx.fillRect(-this.length/2, -this.width/2, this.length, this.width);
-                ctx.strokeRect(-this.length/2, -this.width/2, this.length, this.width);
+                ctx.fillStyle = '#1e3a8a'; // Blue-900
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(-this.length / 2, -this.width / 2, this.length, this.width);
+                ctx.shadowBlur = 0;
 
-                // Panah
-                ctx.fillStyle = '#3b82f6';
-                ctx.beginPath();
-                ctx.moveTo(-5, -10);
-                ctx.lineTo(15, 0);
-                ctx.lineTo(-5, 10);
-                ctx.fill();
+                // Roda
+                ctx.fillStyle = '#111827'; // Gray-900
+                ctx.fillRect(-10, -this.width / 2 - 5, 20, 5); // Kiri
+                ctx.fillRect(-10, this.width / 2, 20, 5); // Kanan
 
-                // Ban
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(-this.length/4, -this.width/2 - 5, this.length/2, 6);
-                ctx.fillRect(-this.length/4, this.width/2 - 1, this.length/2, 6);
-
-                // Tiang Sensor
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(this.sensorDist - 2, -this.sensorSpread*2.5, 4, this.sensorSpread*5);
+                // Papan Sensor Depan
+                ctx.fillStyle = '#064e3b'; // Emerald-900
+                ctx.fillRect(15, -25, 10, 50);
 
                 // Titik Sensor
-                for (let i = -2; i <= 2; i++) {
+                for (let i = 0; i < 5; i++) {
                     ctx.beginPath();
-                    ctx.arc(this.sensorDist, i * this.sensorSpread, 3, 0, Math.PI * 2);
-                    ctx.fillStyle = this.sensorValues[i+2] ? '#ef4444' : '#64748b'; 
+                    ctx.arc(this.sensors[i].x, this.sensors[i].y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = this.sensorValues[i] ? '#f43f5e' : '#9ca3af';
                     ctx.fill();
+                    ctx.closePath();
                 }
+                
+                // Indikator Arah
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(25, 0);
+                ctx.strokeStyle = '#60a5fa';
+                ctx.lineWidth = 2;
+                ctx.stroke();
 
                 ctx.restore();
             }
@@ -550,205 +592,110 @@
 
         const robot = new Robot();
 
-        function loadTrackSuccess() {
-            if(trackImage.width === 0 || trackImage.height === 0) {
-                handleTrackError();
-                return;
-            }
-
-            // FITUR BARU: Auto-Downscale gambar raksasa agar browser tidak crash
-            const MAX_DIMENSION = 1200; // Batas maksimal pixel yang aman untuk canvas
-            let scaleFactor = 1;
+        function updateGlobalStatus() {
+            const st = document.getElementById('statusText');
+            st.innerText = simulationState;
+            st.className = `font-mono font-bold ${simulationState === States.IDLE ? 'text-blue-400' : simulationState === States.FINISHED ? 'text-emerald-400' : 'text-rose-400'}`;
             
-            if (trackImage.width > MAX_DIMENSION || trackImage.height > MAX_DIMENSION) {
-                if (trackImage.width > trackImage.height) {
-                    scaleFactor = MAX_DIMENSION / trackImage.width;
-                } else {
-                    scaleFactor = MAX_DIMENSION / trackImage.height;
-                }
-                console.log(`Gambar terlalu besar. Diperkecil menjadi ${(scaleFactor*100).toFixed(1)}%`);
-            }
-
-            const safeWidth = Math.floor(trackImage.width * scaleFactor);
-            const safeHeight = Math.floor(trackImage.height * scaleFactor);
-
-            simCanvas.width = safeWidth;
-            simCanvas.height = safeHeight;
-            hiddenCanvas.width = safeWidth;
-            hiddenCanvas.height = safeHeight;
-
-            // Cetak ke canvas tersembunyi dengan ukuran yang aman
-            hiddenCtx.drawImage(trackImage, 0, 0, safeWidth, safeHeight);
-            
-            trackLoaded = true;
-            imageErrorUI.classList.add('hidden');
-            imageErrorUI.classList.remove('flex');
-            simCanvas.classList.remove('hidden');
-            
-            statusText.innerText = "IDLE";
-            statusText.className = "text-slate-400 font-bold";
-
-            robot.reset(
-                Number(document.getElementById('startX').value),
-                Number(document.getElementById('startY').value),
-                Number(document.getElementById('startAngle').value)
-            );
-            drawSimulation();
+            document.getElementById('activeCounterText').innerText = (simulationState === States.IDLE || simulationState === States.FINISHED) ? '-' : (robot.activeCounter + 1);
         }
-
-        function handleTrackError() {
-            trackLoaded = false;
-            statusText.innerText = "ERROR FILE!";
-            statusText.className = "text-rose-500 font-bold";
-            simCanvas.classList.add('hidden');
-            
-            imageErrorUI.classList.remove('hidden');
-            imageErrorUI.classList.add('flex');
-        }
-
-        trackImage.onload = loadTrackSuccess;
-        trackImage.onerror = handleTrackError;
-
-        // Inisiasi pemuatan gambar dari server. 
-        // Menggunakan '?v=xxx' agar memaksa Vercel/Browser menghiraukan cache lama (hanya untuk memastikan gambar terambil).
-        trackImage.src = 'Lapangan_SD.jpeg?v=' + new Date().getTime(); 
-
-        // Fungsi Fitur Manual Upload (Solusi Cepat 100% Berhasil)
-        window.handleManualUpload = (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                // Kita muat URL lokal ini ke image object
-                trackImage.src = url;
-            }
-        };
 
         function forceStopSim() {
-            isRunning = false;
-            const btn = document.getElementById('btnStart');
-            btn.innerText = "Start";
-            btn.classList.replace('bg-amber-600', 'bg-emerald-600');
-            btn.classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
+            simulationState = States.FINISHED;
+            updateGlobalStatus();
         }
 
         function startSimulation() {
             if (!trackLoaded) {
-                // Flash tombol jika ditekan sebelum gambar ada
-                const btn = document.getElementById('btnStart');
-                btn.classList.replace('bg-emerald-600', 'bg-rose-600');
-                setTimeout(() => btn.classList.replace('bg-rose-600', 'bg-emerald-600'), 300);
+                alert("Gambar lintasan belum siap atau error. Silakan muat gambar manual.");
                 return;
             }
             
-            const btn = document.getElementById('btnStart');
-            if (isRunning) {
-                // Pause Game
-                forceStopSim();
-            } else {
-                // Start / Resume Game
-                isRunning = true;
-                btn.innerText = "Pause";
-                btn.classList.replace('bg-emerald-600', 'bg-amber-600');
-                btn.classList.replace('hover:bg-emerald-500', 'hover:bg-amber-500');
-                
-                if (robot.state === States.IDLE || robot.state === States.FINISHED) {
-                    const sx = Number(document.getElementById('startX').value);
-                    const sy = Number(document.getElementById('startY').value);
-                    const sa = Number(document.getElementById('startAngle').value);
-                    robot.reset(sx, sy, sa);
-                    robot.state = States.TURNING;
-                }
-                
-                lastTime = performance.now();
-                if (!animationId) {
-                    animationId = requestAnimationFrame(gameLoop);
-                }
+            counters.forEach((c, i) => updateCounterData(i));
+            
+            robot.reset(
+                document.getElementById('startX').value,
+                document.getElementById('startY').value,
+                document.getElementById('startAngle').value
+            );
+            
+            simulationState = States.TURNING;
+            updateGlobalStatus();
+            
+            lastTime = performance.now();
+            if (!animationId) {
+                animationLoop(lastTime);
             }
         }
 
         function stopSimulation() {
-            forceStopSim();
-            const sx = Number(document.getElementById('startX').value);
-            const sy = Number(document.getElementById('startY').value);
-            const sa = Number(document.getElementById('startAngle').value);
-            robot.reset(sx, sy, sa);
-            drawSimulation(); 
-        }
-
-        function resetSimulation() {
-            stopSimulation();
-            counters = [{
-                dir: 'maju',
-                vTurnL: 100, vTurnR: 100,
-                sa: 50, ta: 1000,
-                sb: 80, tb: 2000,
-                kp: 60.0, ki: 0.05, kd: 10.0
-            }];
-            renderCounters();
-            document.getElementById('startMode').value = 'SB';
-            document.getElementById('startX').value = '430';
-            document.getElementById('startY').value = '1113';
-            document.getElementById('startAngle').value = '180';
-            
-            robot.reset(430, 1113, 180);
-            drawSimulation();
-        }
-
-        function gameLoop(timestamp) {
-            if (!isRunning) {
+            simulationState = States.IDLE;
+            updateGlobalStatus();
+            if (animationId) {
+                cancelAnimationFrame(animationId);
                 animationId = null;
-                return;
             }
+        }
+
+        function drawScene() {
+            if (!trackLoaded) return;
+            
+            // Bersihkan kanvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Gambar ulang track yang bersih dari trackCanvas
+            ctx.drawImage(trackCanvas, 0, 0);
+            
+            // Gambar robot di atasnya
+            robot.draw(ctx);
+        }
+
+        function animationLoop(timestamp) {
+            if (simulationState === States.IDLE) return;
 
             const dt = timestamp - lastTime;
             lastTime = timestamp;
 
-            if (dt < 100) {
-                robot.update(dt);
-            }
+            robot.update(dt);
+            drawScene();
 
-            drawSimulation();
-            animationId = requestAnimationFrame(gameLoop);
+            animationId = requestAnimationFrame(animationLoop);
         }
 
-        function drawSimulation() {
-            // Jika gambar belum ada ukurannya, jangan gambar agar tidak error
-            if (simCanvas.width === 0) return;
+        // Pindahkan robot dengan klik mouse saat IDLE
+        canvas.addEventListener('mousedown', (e) => {
+            if (simulationState !== States.IDLE && simulationState !== States.FINISHED) return;
             
-            ctx.clearRect(0, 0, simCanvas.width, simCanvas.height);
-            
-            if (trackLoaded) {
-                try {
-                    // Update drawImage agar memakai ukuran canvas yang baru
-                    ctx.drawImage(trackImage, 0, 0, simCanvas.width, simCanvas.height);
-                } catch(e) {
-                    console.error("Gagal menggambar ke canvas:", e);
-                }
-            }
-            
-            robot.draw(ctx);
-        }
+            const rect = canvas.getBoundingClientRect();
+            // Kalkulasi skala CSS vs ukuran internal canvas
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
 
-        renderCounters();
-        
-        // Fitur klik kanvas untuk menggeser robot dengan cepat
-        simCanvas.addEventListener('mousedown', (e) => {
-            if (!trackLoaded || (robot.state !== States.IDLE && robot.state !== States.FINISHED)) return;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
             
-            const rect = simCanvas.getBoundingClientRect();
-            const scaleX = simCanvas.width / rect.width;
-            const scaleY = simCanvas.height / rect.height;
+            document.getElementById('startX').value = Math.round(x);
+            document.getElementById('startY').value = Math.round(y);
             
-            const clickX = (e.clientX - rect.left) * scaleX;
-            const clickY = (e.clientY - rect.top) * scaleY;
-
-            document.getElementById('startX').value = Math.floor(clickX);
-            document.getElementById('startY').value = Math.floor(clickY);
-            
-            robot.reset(clickX, clickY, Number(document.getElementById('startAngle').value));
-            drawSimulation();
+            robot.x = x;
+            robot.y = y;
+            drawScene();
         });
 
+        // Event Listeners Tombol
+        document.getElementById('btnStart').addEventListener('click', startSimulation);
+        document.getElementById('btnStop').addEventListener('click', stopSimulation);
+        document.getElementById('btnReset').addEventListener('click', () => {
+            stopSimulation();
+            robot.reset(
+                document.getElementById('startX').value,
+                document.getElementById('startY').value,
+                document.getElementById('startAngle').value
+            );
+            drawScene();
+        });
+
+        // Init
+        renderCounters();
     </script>
 </body>
 </html>
