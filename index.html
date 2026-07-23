@@ -357,12 +357,10 @@
                 this.angle = Math.PI; 
                 this.scale = 1.5; 
                 
-                // Dimensi Dasar
                 this.width = 50; 
                 this.length = 70;
                 this.wheelBase = 55;
                 
-                // Sensor direntangkan agar lebih lebar
                 this.sensors = [
                     { x: 35, y: -30 }, 
                     { x: 35, y: -15 },
@@ -371,6 +369,10 @@
                     { x: 35, y: 30 }
                 ];
                 this.sensorValues = [0,0,0,0,0];
+                
+                // Variabel untuk sistem Dense Sampling
+                this.internalActiveCount = 0;
+                this.internalErrorSum = 0;
                 
                 this.activeCounter = 0;
                 this.stateTimer = 0;
@@ -390,6 +392,8 @@
                 this.lastError = 0;
                 this.integral = 0;
                 this.sensorValues = [0,0,0,0,0];
+                this.internalActiveCount = 0;
+                this.internalErrorSum = 0;
                 this.updateUI();
             }
 
@@ -398,46 +402,67 @@
                 
                 const cosA = Math.cos(this.angle);
                 const sinA = Math.sin(this.angle);
+                
+                this.sensorValues = [0,0,0,0,0]; // Reset lampu indikator
+                let errorSum = 0;
+                let activeCount = 0;
 
-                for (let i = 0; i < 5; i++) {
-                    const s = this.sensors[i];
+                // DENSE SAMPLING ALGORITHM
+                // Memindai 30 titik sangat rapat di sepanjang area depan robot.
+                // Mengatasi bug garis menyelinap (blank spot) di celah antar sensor.
+                const scaledX = 35 * this.scale;
+                const maxSpread = 30; // Rentang Y lokal (-30 kiri sampai 30 kanan)
+                const totalSamples = 30; 
+                
+                for (let i = 0; i <= totalSamples; i++) {
+                    const localY = -maxSpread + (i / totalSamples) * (maxSpread * 2);
+                    const scaledY = localY * this.scale;
                     
-                    // Kalikan koordinat sensor dasar dengan skala
-                    const scaledX = s.x * this.scale;
-                    const scaledY = s.y * this.scale;
-                    
-                    // Rotasi lokal ke global map
                     const globalX = this.x + (scaledX * cosA - scaledY * sinA);
                     const globalY = this.y + (scaledX * sinA + scaledY * cosA);
 
                     if (globalX >= 0 && globalX < trackCanvas.width && globalY >= 0 && globalY < trackCanvas.height) {
                         const pixel = trackCtx.getImageData(globalX, globalY, 1, 1).data;
                         const brightness = (pixel[0] + pixel[1] + pixel[2]) / 3;
-                        // Threshold warna hitam < 100
-                        this.sensorValues[i] = brightness < 100 ? 1 : 0; 
-                    } else {
-                        this.sensorValues[i] = 0;
-                    }
-                }
-            }
+                        
+                        if (brightness < 100) { // Garis hitam terdeteksi
+                            let weight = localY / 15.0; // Skala bobot posisi: -30 -> -2, Tengah -> 0, +30 -> +2
+                            errorSum += weight;
+                            activeCount++;
 
-            calculateError() {
-                const weights = [-2, -1, 0, 1, 2];
-                let error = 0;
-                let activeCount = 0;
-
-                for (let i = 0; i < 5; i++) {
-                    if (this.sensorValues[i]) {
-                        error += weights[i];
-                        activeCount++;
+                            // Nyalakan indikator UI Sensor yang sesuai dengan posisi pemindaian
+                            if (localY < -18) this.sensorValues[0] = 1;
+                            else if (localY < -6) this.sensorValues[1] = 1;
+                            else if (localY <= 6) this.sensorValues[2] = 1;
+                            else if (localY <= 18) this.sensorValues[3] = 1;
+                            else this.sensorValues[4] = 1;
+                        }
                     }
                 }
                 
-                if (activeCount > 0) {
-                    this.currentError = error / activeCount;
+                this.internalErrorSum = errorSum;
+                this.internalActiveCount = activeCount;
+            }
+
+            calculateError() {
+                if (this.internalActiveCount > 0) {
+                    // Nilai error analog (Center of Mass) yang sangat presisi dan halus
+                    this.currentError = this.internalErrorSum / this.internalActiveCount;
+                    
+                    // Simpan memori posisi terakhir garis secara terus menerus
+                    this.lastError = this.currentError;
                 } else {
-                    // Memory jika keluar garis: ingat error terakhir
-                    this.currentError = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0);
+                    // LOGIKA LOST LINE (Robot keluar garis sepenuhnya)
+                    // Jika sebelumnya terdeteksi menikung (error besar), banting setir tajam untuk mencari garis.
+                    if (this.lastError > 0.5) {
+                        this.currentError = 3.5; 
+                    } else if (this.lastError < -0.5) {
+                        this.currentError = -3.5;
+                    } else {
+                        // Jika sebelumnya lurus presisi lalu kehilangan garis (lastError mendekati 0), 
+                        // jangan banting setir, melainkan pertahankan error kecilnya.
+                        this.currentError = this.lastError;
+                    }
                 }
                 
                 document.getElementById('pidErrorText').innerText = this.currentError.toFixed(2);
