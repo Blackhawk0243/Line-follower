@@ -3,465 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulasi Robot Line Follower</title>
+    <title>Line Follower Pro Sim</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; overflow: hidden; }
-        /* Custom scrollbar for settings panel */
+        /* Mengamankan scrollbar agar rapi */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border-right: 1px solid #334155; }
-        input, select { background-color: #334155; border: 1px solid #475569; color: white; border-radius: 0.375rem; padding: 0.25rem 0.5rem; width: 100%; font-size: 0.875rem;}
-        input:focus, select:focus { outline: none; border-color: #3b82f6; ring: 2px #3b82f6; }
-        label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; display: block;}
-        
-        .counter-card { background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
-        
-        #canvas-container { position: relative; width: 100%; height: 100%; background: #e2e8f0; display: flex; justify-content: center; align-items: flex-start; overflow: auto; padding: 2rem; }
-        canvas { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); border-radius: 0.5rem; background: white; flex-shrink: 0; }
     </style>
 </head>
-<body class="h-screen flex">
+<body class="bg-slate-900 text-slate-200 h-screen w-screen overflow-hidden flex font-sans">
 
-    <aside class="glass-panel w-96 h-full flex flex-col z-10 shadow-2xl overflow-hidden shrink-0">
-        <div class="p-6 border-b border-slate-700">
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center gap-2">
-                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+    <!-- Modal Notifikasi CORS / Error -->
+    <div id="errorModal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl max-w-lg border border-red-500 text-center">
+            <div class="text-red-500 text-5xl mb-4">⚠️</div>
+            <h2 class="text-2xl font-bold text-white mb-2">Akses Gambar Diblokir (CORS)</h2>
+            <p class="text-slate-300 mb-6 text-sm leading-relaxed">
+                Browser menolak robot untuk membaca warna gambar <span class="font-bold text-white">Lapangan SD.jpg.jpeg</span> karena Anda membuka file ini langsung (URL file://). <br><br>
+                <b>Solusi:</b> Gunakan ekstensi <span class="text-blue-400">Live Server</span> di VS Code, atau upload ke Github/Vercel agar berjalan melalui HTTP/HTTPS.
+            </p>
+            <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
+
+    <!-- Sidebar Konfigurasi (Kiri) -->
+    <div class="w-96 h-full bg-slate-900 border-r border-slate-700 flex flex-col shadow-2xl z-10 shrink-0">
+        
+        <!-- Header -->
+        <div class="p-5 border-b border-slate-700 bg-slate-800/50">
+            <h1 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                 Line Follower Pro
             </h1>
             <p class="text-xs text-slate-400 mt-1">Simulasi Konfigurasi Counter & PID</p>
         </div>
 
-        <div class="p-4 border-b border-slate-700 bg-slate-800/50">
-            <div class="flex flex-col gap-3">
-                <div>
-                    <label>Start Mode</label>
-                    <select id="startMode">
-                        <option value="AC">AC (Hanya Belok)</option>
-                        <option value="SA">SA (Belok + Run SA)</option>
-                        <option value="SB" selected>SB (Belok + Run SA + Run SB)</option>
-                    </select>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mt-1 mb-2">
-                    <div>
-                        <label title="Geser posisi awal X">Start X</label>
-                        <input type="number" id="startXInp" value="450" onchange="updateStartPos()">
-                    </div>
-                    <div>
-                        <label title="Geser posisi awal Y">Start Y</label>
-                        <input type="number" id="startYInp" value="1080" onchange="updateStartPos()">
-                    </div>
-                    <div>
-                        <label title="Arah hadap robot">Sudut (&deg;)</label>
-                        <input type="number" id="startAngleInp" value="180" onchange="updateStartPos()">
-                    </div>
-                </div>
-                <div class="flex gap-2">
-                    <button id="btnStart" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded transition-colors">Start</button>
-                    <button id="btnStop" class="flex-1 bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded transition-colors hidden">Stop</button>
-                    <button id="btnReset" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-semibold py-2 px-4 rounded transition-colors">Reset</button>
-                </div>
+        <!-- Global Settings -->
+        <div class="p-5 border-b border-slate-700 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start Mode</label>
+                <select id="startMode" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                    <option value="AC">AC (Hanya Belok lalu Stop)</option>
+                    <option value="SA">SA (Belok + Speed A)</option>
+                    <option value="SB" selected>SB (Belok + Speed A + Speed B)</option>
+                </select>
             </div>
             
-            <div class="mt-4 flex justify-between items-center text-xs font-mono text-slate-300">
-                <span>Status: <span id="simStatus" class="text-yellow-400 font-bold">IDLE</span></span>
-                <span>Counter Aktif: <span id="activeCounterDisp" class="text-emerald-400 font-bold">0</span></span>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start X</label>
+                    <input type="number" id="startX" value="430" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Start Y</label>
+                    <input type="number" id="startY" value="1113" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Sudut (&deg;)</label>
+                    <input type="number" id="startAngle" value="180" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-sm focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button id="btnStart" onclick="startSimulation()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded transition-colors">Start</button>
+                <button onclick="stopSimulation()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2 px-4 rounded transition-colors">Stop</button>
+                <button onclick="resetSimulation()" class="flex-1 bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded transition-colors">Reset</button>
+            </div>
+            
+            <div class="flex justify-between items-center text-xs font-mono bg-slate-950 p-2 rounded border border-slate-800">
+                <span>Status: <span id="statusText" class="text-yellow-400 font-bold">IDLE</span></span>
+                <span>Counter Aktif: <span id="activeCounterText" class="text-blue-400 font-bold">-</span></span>
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-4" id="countersContainer">
+        <!-- Counters Container -->
+        <div id="countersContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
             <!-- Counters will be injected here -->
         </div>
 
-        <div class="p-4 border-t border-slate-700 bg-slate-800/80">
-            <button id="btnAddCounter" class="w-full border border-dashed border-slate-500 hover:border-slate-300 hover:bg-slate-700/50 text-slate-300 font-semibold py-2 px-4 rounded transition-all flex items-center justify-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Tambah Counter
+        <!-- Footer Add Button -->
+        <div class="p-3 border-t border-slate-700 bg-slate-800">
+            <button onclick="addCounter()" class="w-full py-3 border border-dashed border-slate-500 text-slate-400 hover:text-white hover:border-blue-400 hover:bg-blue-900/20 rounded-lg transition-all flex items-center justify-center gap-2">
+                <span>+</span> Tambah Counter
             </button>
         </div>
-    </aside>
+    </div>
 
-    <main id="canvas-container" class="flex-1">
-        <!-- Image Source for Track (Will be loaded from github/local) -->
-        <img id="trackImage" src="Lapangan SD.jpg.jpeg" crossorigin="anonymous" style="display: none;" onerror="this.onerror=null; this.src='https://placehold.co/600x1200/ffffff/000000?text=Gambar+Track+Tidak+Ditemukan';"/>
-
-        <!-- Visible Canvas -->
-        <canvas id="simCanvas" width="600" height="1200"></canvas>
+    <!-- Area Simulasi (Kanan) -->
+    <div class="flex-1 bg-slate-200 relative overflow-hidden flex items-center justify-center" id="canvasContainer">
+        <!-- Canvas untuk digambar dan dilihat user -->
+        <canvas id="simCanvas" class="shadow-2xl rounded bg-white max-h-full max-w-full object-contain"></canvas>
+        <!-- Canvas tersembunyi untuk membaca warna piksel lintasan secara akurat -->
+        <canvas id="hiddenCanvas" class="hidden"></canvas>
         
-        <!-- Hidden Canvas for Sensor Reading (Pure Path, No Robot Graphics) -->
-        <canvas id="sensorCanvas" width="600" height="1200" style="display: none;"></canvas>
-
-        <!-- Sensor Status Overlay -->
-        <div class="absolute bottom-6 right-6 bg-slate-800/90 p-4 rounded-xl shadow-lg border border-slate-700 backdrop-blur-sm">
-            <h3 class="text-xs text-slate-400 font-bold uppercase mb-2 text-center">Sensor Array</h3>
-            <div class="flex gap-2 justify-center" id="sensorIndicators">
-                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-0"></div>
-                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-1"></div>
-                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-2"></div>
-                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-3"></div>
-                <div class="w-4 h-4 rounded-full bg-slate-600 border border-slate-500 transition-colors duration-75" id="ind-4"></div>
+        <!-- Sensor UI Overlay -->
+        <div class="absolute top-5 right-5 bg-slate-900/90 backdrop-blur text-white p-4 rounded-xl border border-slate-700 shadow-xl w-64 pointer-events-none">
+            <h3 class="text-sm font-bold text-slate-400 mb-3 border-b border-slate-700 pb-2 uppercase tracking-wider">Status Sensor</h3>
+            <div class="flex justify-between mb-4">
+                <div id="s0" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors"></div>
+                <div id="s1" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors"></div>
+                <div id="s2" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors"></div>
+                <div id="s3" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors"></div>
+                <div id="s4" class="w-6 h-6 rounded-full border-2 border-slate-500 bg-slate-800 transition-colors"></div>
             </div>
-            <div class="text-center text-[10px] text-slate-500 mt-2 font-mono">Error: <span id="errorValDisp">0</span></div>
+            <div class="flex justify-between text-xs font-mono text-slate-400">
+                <p>PID Error:</p>
+                <p id="pidErrorText" class="font-bold text-white">0.00</p>
+            </div>
         </div>
-    </main>
+    </div>
 
     <script>
-        // DOM Elements
-        const countersContainer = document.getElementById('countersContainer');
-        const btnAddCounter = document.getElementById('btnAddCounter');
-        const btnStart = document.getElementById('btnStart');
-        const btnStop = document.getElementById('btnStop');
-        const btnReset = document.getElementById('btnReset');
-        const simStatus = document.getElementById('simStatus');
-        const activeCounterDisp = document.getElementById('activeCounterDisp');
-        const startModeSelect = document.getElementById('startMode');
-        
-        // Start Pos Elements
-        const startXInp = document.getElementById('startXInp');
-        const startYInp = document.getElementById('startYInp');
-        const startAngleInp = document.getElementById('startAngleInp');
-        
-        // Canvas Setup
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const sensorCanvas = document.getElementById('sensorCanvas');
-        const sCtx = sensorCanvas.getContext('2d', { willReadFrequently: true });
-
-        // Simulation State
-        let animationId = null;
-        let isRunning = false;
-        let lastTime = 0;
-        let counters = [];
-        let currentCounterIndex = -1; // -1 means before first line mark
-        
-        // Robot State Machine Enums
         const States = {
             IDLE: 'IDLE',
-            FINDING_LINE: 'FINDING_LINE', // Initial state to get on track
-            FOLLOWING_LINE: 'FOLLOWING_LINE', // Between counters
-            EXEC_TURN: 'EXEC_TURN', // Belok
-            EXEC_SA: 'EXEC_SA',   // Run SA
-            EXEC_SB: 'EXEC_SB',   // Run SB
+            TURNING: 'TURNING', // Open Loop Belok
+            RUNNING_SA: 'RUNNING_SA', // PID Mode SA
+            RUNNING_SB: 'RUNNING_SB', // PID Mode SB
             FINISHED: 'FINISHED'
+        };
+
+        // Konfigurasi Default Counter Pertama
+        let counters = [
+            {
+                dir: 'maju',
+                vTurnL: 100, vTurnR: 100,
+                sa: 50, ta: 1000,
+                sb: 80, tb: 2000,
+                kp: 60.0, ki: 0.05, kd: 10.0
+            }
+        ];
+
+        // Referensi DOM
+        const countersContainer = document.getElementById('countersContainer');
+        const simCanvas = document.getElementById('simCanvas');
+        const ctx = simCanvas.getContext('2d');
+        const hiddenCanvas = document.getElementById('hiddenCanvas');
+        const hiddenCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
+        const canvasContainer = document.getElementById('canvasContainer');
+
+        let trackImage = new Image();
+        trackImage.src = 'Lapangan SD.jpg.jpeg'; // Harus sama persis dengan nama file Anda
+        
+        let trackLoaded = false;
+        let animationId;
+        let lastTime = 0;
+        let isRunning = false;
+
+        function renderCounters() {
+            countersContainer.innerHTML = '';
+            counters.forEach((c, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 border border-slate-700 rounded-lg p-4 relative group';
+                div.innerHTML = `
+                    <div class="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="bg-slate-700 text-xs px-2 py-1 rounded font-mono">#${index + 1}</span>
+                        <button onclick="removeCounter(${index})" class="text-slate-400 hover:text-red-400"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
+                    </div>
+                    
+                    <div class="space-y-4 mt-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Arah Belok</label>
+                            <select onchange="updateCounter(${index}, 'dir', this.value)" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                                <option value="maju" ${c.dir === 'maju' ? 'selected' : ''}>Maju Lurus</option>
+                                <option value="kanan" ${c.dir === 'kanan' ? 'selected' : ''}>Belok Kanan</option>
+                                <option value="kiri" ${c.dir === 'kiri' ? 'selected' : ''}>Belok Kiri</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Turn Speed L</label>
+                                <input type="number" onchange="updateCounter(${index}, 'vTurnL', this.value)" value="${c.vTurnL}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Turn Speed R</label>
+                                <input type="number" onchange="updateCounter(${index}, 'vTurnR', this.value)" value="${c.vTurnR}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Speed A</label>
+                                <input type="number" onchange="updateCounter(${index}, 'sa', this.value)" value="${c.sa}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Timer A (ms)</label>
+                                <input type="number" onchange="updateCounter(${index}, 'ta', this.value)" value="${c.ta}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Speed B</label>
+                                <input type="number" onchange="updateCounter(${index}, 'sb', this.value)" value="${c.sb}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wider">Timer B (ms)</label>
+                                <input type="number" onchange="updateCounter(${index}, 'tb', this.value)" value="${c.tb}" class="w-full bg-slate-900 border border-slate-600 rounded p-1.5 text-sm focus:border-blue-500 outline-none">
+                            </div>
+                        </div>
+
+                        <div class="border-t border-slate-700 pt-3 mt-2">
+                            <label class="block text-[10px] font-bold text-emerald-500 mb-2 uppercase tracking-wider">PID Settings (Line Follow)</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5">KP</label>
+                                    <input type="number" step="0.1" onchange="updateCounter(${index}, 'kp', this.value)" value="${c.kp}" class="w-full bg-slate-900 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5">KI</label>
+                                    <input type="number" step="0.01" onchange="updateCounter(${index}, 'ki', this.value)" value="${c.ki}" class="w-full bg-slate-900 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold text-slate-400 mb-0.5">KD</label>
+                                    <input type="number" step="0.1" onchange="updateCounter(${index}, 'kd', this.value)" value="${c.kd}" class="w-full bg-slate-900 border border-slate-600 rounded p-1 text-xs focus:border-emerald-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                countersContainer.appendChild(div);
+            });
+        }
+
+        window.addCounter = () => {
+            counters.push({
+                dir: 'maju',
+                vTurnL: 100, vTurnR: 100,
+                sa: 50, ta: 1000,
+                sb: 80, tb: 2000,
+                kp: 60.0, ki: 0.05, kd: 10.0
+            });
+            renderCounters();
+            countersContainer.scrollTop = countersContainer.scrollHeight;
+        };
+
+        window.removeCounter = (index) => {
+            if (counters.length > 1) {
+                counters.splice(index, 1);
+                renderCounters();
+            }
+        };
+
+        window.updateCounter = (index, field, value) => {
+            if (field === 'dir') {
+                counters[index].dir = value;
+                // Auto-set nilai Default Kecepatan L & R berdasarkan arah
+                if (value === 'maju') {
+                    counters[index].vTurnL = 100;
+                    counters[index].vTurnR = 100;
+                } else if (value === 'kanan') {
+                    counters[index].vTurnL = 80;
+                    counters[index].vTurnR = -20;
+                } else if (value === 'kiri') {
+                    counters[index].vTurnL = -20;
+                    counters[index].vTurnR = 80;
+                }
+                renderCounters(); 
+            } else {
+                counters[index][field] = Number(value);
+            }
         };
 
         class Robot {
             constructor() {
-                // Initial Start Position based on UI Inputs
-                this.startX = Number(startXInp.value);
-                this.startY = Number(startYInp.value);
-                this.startAngle = (Number(startAngleInp.value) * Math.PI) / 180;
+                this.x = 0;
+                this.y = 0;
+                this.angle = 0;
+                this.width = 40;
+                this.length = 50;
+                this.wheelBase = 35; 
                 
-                this.reset();
+                this.sensorDist = 25; // Jarak sensor dari pusat
+                this.sensorSpread = 12; // Jarak antar sensor
+                this.sensorValues = [0, 0, 0, 0, 0]; // 5 Sensors
+                this.sensorThreshold = 100; // Dibawah ini = hitam
                 
-                // Physical Properties
-                this.width = 30;
-                this.height = 40;
-                this.wheelBase = 32; // Distance between wheels
-                this.wheelRadius = 8;
-                this.sensorOffset = 25; // Distance from center to sensor array
-                
-                // Dynamics
                 this.state = States.IDLE;
-                this.timer = 0; // ms timer for SA/SB
-                this.turnTimer = 0;
+                this.activeCounter = 0;
+                this.stateTimer = 0;
                 
                 // PID State
                 this.lastError = 0;
                 this.integral = 0;
+                this.currentError = 0;
 
-                // Sensor readings (0 = white, 1 = black)
-                this.sensorValues = [0, 0, 0, 0, 0];
-                this.hitJunction = false;
+                this.corsAlerted = false;
             }
 
-            reset() {
-                this.startX = Number(startXInp.value);
-                this.startY = Number(startYInp.value);
-                this.startAngle = (Number(startAngleInp.value) * Math.PI) / 180;
-                
-                this.x = this.startX;
-                this.y = this.startY;
-                this.angle = this.startAngle;
+            reset(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                this.angle = (angle * Math.PI) / 180;
                 this.state = States.IDLE;
-                this.timer = 0;
-                this.turnTimer = 0;
+                this.activeCounter = 0;
+                this.stateTimer = 0;
                 this.lastError = 0;
                 this.integral = 0;
-                this.hitJunction = false;
-            }
-
-            update(dt, config) {
-                if (this.state === States.IDLE || this.state === States.FINISHED) return;
-
-                this.readSensors();
-                this.checkJunction();
-
-                let vl = 0, vr = 0;
-
-                // State Machine Logic
-                switch (this.state) {
-                    case States.FINDING_LINE:
-                    case States.FOLLOWING_LINE:
-                        // Normal line following until hitting a junction
-                        let pidDefault = { kp: 1.5, ki: 0.01, kd: 5 }; // Default PID before any counter
-                        let baseSpeed = 40; // Default speed
-                        if (currentCounterIndex >= 0 && counters[currentCounterIndex]) {
-                            // If we finished SB of previous counter, what speed do we use to find next junction?
-                            // Let's use SB speed or a default. We'll use a slow default.
-                            baseSpeed = 30; 
-                        }
-                        let res = this.calculatePID(pidDefault, baseSpeed);
-                        vl = res.vl; vr = res.vr;
-                        break;
-
-                    case States.EXEC_TURN:
-                        // Open-loop turning without PID
-                        vl = config.vTurnL;
-                        vr = config.vTurnR;
-                        this.turnTimer -= dt;
-                        
-                        // Condition to end turn: Time has passed AND middle sensor finds line
-                        // Or just time-based to prevent infinite turning if line is missed.
-                        // Let's use a combination: Must turn at least 300ms, then look for line.
-                        if (this.turnTimer <= 0) {
-                            if (this.sensorValues[2] === 1) {
-                                this.transitionTo(States.EXEC_SA, config);
-                            } else if (this.turnTimer < -1500) {
-                                // Fallback: if it can't find line after 1.5s, force transition to avoid getting stuck
-                                this.transitionTo(States.EXEC_SA, config);
-                            }
-                        }
-                        break;
-
-                    case States.EXEC_SA:
-                        this.timer -= dt;
-                        let resSA = this.calculatePID({kp: config.kp, ki: config.ki, kd: config.kd}, config.sa);
-                        vl = resSA.vl; vr = resSA.vr;
-
-                        if (this.timer <= 0) {
-                            if (startModeSelect.value === 'SA' || startModeSelect.value === 'AC') {
-                                this.transitionTo(States.FINISHED, config);
-                            } else {
-                                this.transitionTo(States.EXEC_SB, config);
-                            }
-                        }
-                        break;
-
-                    case States.EXEC_SB:
-                        this.timer -= dt;
-                        let resSB = this.calculatePID({kp: config.kp, ki: config.ki, kd: config.kd}, config.sb);
-                        vl = resSB.vl; vr = resSB.vr;
-
-                        if (this.timer <= 0) {
-                            this.transitionTo(States.FOLLOWING_LINE, config);
-                        }
-                        break;
-                }
-
-                this.applyKinematics(vl, vr, dt);
                 this.updateUI();
             }
 
-            transitionTo(newState, config) {
-                this.state = newState;
-                simStatus.innerText = newState;
+            getSensorPositions() {
+                const positions = [];
+                // S0 (kiri jauh) sampai S4 (kanan jauh)
+                for (let i = -2; i <= 2; i++) {
+                    const sx = this.x + this.sensorDist * Math.cos(this.angle) - (i * this.sensorSpread) * Math.sin(this.angle);
+                    const sy = this.y + this.sensorDist * Math.sin(this.angle) + (i * this.sensorSpread) * Math.cos(this.angle);
+                    positions.push({x: sx, y: sy});
+                }
+                return positions;
+            }
+
+            readSensors() {
+                if (!trackLoaded) return;
+                const positions = this.getSensorPositions();
                 
-                if (newState === States.EXEC_TURN) {
-                    this.turnTimer = 400; // Force open loop for 400ms to clear junction
-                } else if (newState === States.EXEC_SA) {
-                    this.timer = config.ta;
-                    this.integral = 0; // Reset PID
-                    this.lastError = 0;
-                } else if (newState === States.EXEC_SB) {
-                    this.timer = config.tb;
-                    this.integral = 0;
-                    this.lastError = 0;
-                } else if (newState === States.FINISHED) {
-                    stopSimulation();
+                for (let i = 0; i < 5; i++) {
+                    const p = positions[i];
+                    let isBlack = false;
+
+                    // Pastikan berada di dalam canvas
+                    if (p.x >= 0 && p.x < hiddenCanvas.width && p.y >= 0 && p.y < hiddenCanvas.height) {
+                        try {
+                            // Membaca warna piksel dari hidden canvas
+                            const pixel = hiddenCtx.getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data;
+                            // Asumsi garis hitam: RGB rata-rata rendah
+                            const avg = (pixel[0] + pixel[1] + pixel[2]) / 3;
+                            if (avg < this.sensorThreshold && pixel[3] > 100) {
+                                isBlack = true;
+                            }
+                        } catch (e) {
+                            if (!this.corsAlerted) {
+                                document.getElementById('errorModal').classList.remove('hidden');
+                                this.corsAlerted = true;
+                                isRunning = false; // Stop simulasi
+                            }
+                        }
+                    }
+                    this.sensorValues[i] = isBlack ? 1 : 0;
+                }
+
+                // Update UI Sensors
+                for(let i=0; i<5; i++) {
+                    const el = document.getElementById(`s${i}`);
+                    if(this.sensorValues[i]) {
+                        el.classList.remove('bg-slate-800', 'border-slate-500');
+                        el.classList.add('bg-red-500', 'border-red-400');
+                    } else {
+                        el.classList.add('bg-slate-800', 'border-slate-500');
+                        el.classList.remove('bg-red-500', 'border-red-400');
+                    }
                 }
             }
 
-            calculatePID(pid, baseSpeed) {
-                // Calculate Error based on 5 sensors
-                // Weights: outer=-2/-1, center=0, inner=1/2
-                // Sensor index 0 is left-most, 4 is right-most
-                
-                let error = 0;
-                let activeSensors = 0;
+            calculateError() {
+                // Bobot: S0=-2, S1=-1, S2=0, S3=1, S4=2
                 const weights = [-2, -1, 0, 1, 2];
-                
-                for(let i=0; i<5; i++) {
-                    if (this.sensorValues[i] === 1) {
+                let error = 0;
+                let activeCount = 0;
+
+                for (let i = 0; i < 5; i++) {
+                    if (this.sensorValues[i]) {
                         error += weights[i];
-                        activeSensors++;
+                        activeCount++;
                     }
                 }
                 
-                if (activeSensors > 0) {
-                    error = error / activeSensors;
+                if (activeCount > 0) {
+                    this.currentError = error / activeCount; // Rata-rata bobot yang aktif
                 } else {
-                    // Lost line, remember last error direction to spin back
-                    error = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0); 
+                    // Jika hilang garis, gunakan error terakhir ekstrim
+                    this.currentError = this.lastError > 0 ? 3 : (this.lastError < 0 ? -3 : 0);
                 }
-
-                document.getElementById('errorValDisp').innerText = error.toFixed(1);
-
-                let P = pid.kp * error;
-                this.integral += error;
                 
-                // Anti-windup
-                if(this.integral > 50) this.integral = 50;
-                if(this.integral < -50) this.integral = -50;
-                
-                let I = pid.ki * this.integral;
-                let D = pid.kd * (error - this.lastError);
-                
-                let correction = P + I + D;
-                this.lastError = error;
-
-                // Scale correction to realistic motor limits
-                // Map logical speed (e.g. 0-100) to pixels/sec
-                let pixelSpeedBase = (baseSpeed / 100) * 150; // max 150px/sec
-                
-                return {
-                    vl: pixelSpeedBase + correction * 20,
-                    vr: pixelSpeedBase - correction * 20
-                };
+                document.getElementById('pidErrorText').innerText = this.currentError.toFixed(2);
+                return this.currentError;
             }
 
-            applyKinematics(vl, vr, dt) {
-                let dtSec = dt / 1000;
-                
-                // Differential Drive Kinematics
-                let v = (vr + vl) / 2;
-                let omega = (vr - vl) / this.wheelBase;
+            update(dt) {
+                if (this.state === States.IDLE || this.state === States.FINISHED || this.activeCounter >= counters.length) return;
+
+                this.readSensors();
+                const config = counters[this.activeCounter];
+                const startMode = document.getElementById('startMode').value; // AC, SA, SB
+
+                let vl = 0;
+                let vr = 0;
+
+                // Hitung dt dalam detik untuk pergerakan
+                const dtSec = dt / 1000;
+
+                switch (this.state) {
+                    case States.TURNING:
+                        // Open loop belok menggunakan vTurnL & vTurnR
+                        vl = config.vTurnL;
+                        vr = config.vTurnR;
+                        
+                        // Cek apakah sensor tengah sudah menangkap garis (selesai belok)
+                        // Tambahkan jeda minimal agar tidak langsung berhenti
+                        this.stateTimer += dt;
+                        if (this.stateTimer > 200 && this.sensorValues[2] === 1) {
+                            if (startMode === 'AC') {
+                                this.nextCounter();
+                            } else {
+                                this.state = States.RUNNING_SA;
+                                this.stateTimer = 0;
+                                this.integral = 0; // Reset PID
+                            }
+                        }
+                        break;
+
+                    case States.RUNNING_SA:
+                        this.stateTimer += dt;
+                        if (this.stateTimer >= config.ta) {
+                            if (startMode === 'SA') {
+                                this.nextCounter();
+                            } else if (startMode === 'SB') {
+                                this.state = States.RUNNING_SB;
+                                this.stateTimer = 0;
+                            }
+                            break;
+                        }
+                        
+                        // PID Control
+                        const errA = this.calculateError();
+                        const pA = errA * config.kp;
+                        this.integral += errA * dtSec;
+                        const iA = this.integral * config.ki;
+                        const dA = ((errA - this.lastError) / dtSec) * config.kd;
+                        const pidOutputA = pA + iA + dA;
+                        
+                        vl = config.sa + pidOutputA;
+                        vr = config.sa - pidOutputA;
+                        this.lastError = errA;
+                        break;
+
+                    case States.RUNNING_SB:
+                        this.stateTimer += dt;
+                        if (this.stateTimer >= config.tb) {
+                            this.nextCounter();
+                            break;
+                        }
+
+                        // PID Control
+                        const errB = this.calculateError();
+                        const pB = errB * config.kp;
+                        this.integral += errB * dtSec;
+                        const iB = this.integral * config.ki;
+                        const dB = ((errB - this.lastError) / dtSec) * config.kd;
+                        const pidOutputB = pB + iB + dB;
+                        
+                        vl = config.sb + pidOutputB;
+                        vr = config.sb - pidOutputB;
+                        this.lastError = errB;
+                        break;
+                }
+
+                this.updateUI();
+
+                // Kinematika Differential Drive
+                // Sesuaikan skala kecepatan untuk visualisasi
+                const scale = 0.5;
+                vl *= scale;
+                vr *= scale;
+
+                const v = (vr + vl) / 2;
+                const omega = (vr - vl) / this.wheelBase;
 
                 this.angle += omega * dtSec;
                 this.x += v * Math.cos(this.angle) * dtSec;
                 this.y += v * Math.sin(this.angle) * dtSec;
             }
 
-            getSensorPositions() {
-                const pos = [];
-                const spacing = 8; // distance between sensors
-                for (let i = 0; i < 5; i++) {
-                    // Offset from center line
-                    let xOffset = (i - 2) * spacing; 
-                    
-                    // Transform to global coordinates based on robot angle and position
-                    // Sensors are at the front (this.sensorOffset)
-                    let globalX = this.x + Math.cos(this.angle) * this.sensorOffset - Math.sin(this.angle) * xOffset;
-                    let globalY = this.y + Math.sin(this.angle) * this.sensorOffset + Math.cos(this.angle) * xOffset;
-                    pos.push({x: globalX, y: globalY});
+            nextCounter() {
+                this.activeCounter++;
+                if (this.activeCounter >= counters.length) {
+                    this.state = States.FINISHED;
+                    isRunning = false;
+                    document.getElementById('btnStart').innerText = "Start";
+                    document.getElementById('btnStart').classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                    document.getElementById('btnStart').classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                } else {
+                    this.state = States.TURNING;
+                    this.stateTimer = 0;
                 }
-                return pos;
-            }
-
-            readSensors() {
-                const positions = this.getSensorPositions();
-                let newJunctionState = false;
-                let blackCount = 0;
-                let greyCount = 0;
-
-                for (let i = 0; i < 5; i++) {
-                    let p = positions[i];
-                    // Bounds check
-                    if(p.x < 0 || p.y < 0 || p.x >= canvas.width || p.y >= canvas.height) {
-                        this.sensorValues[i] = 0;
-                        continue;
-                    }
-
-                    // Read pixel from hidden canvas
-                    let pixel;
-                    try {
-                        pixel = sCtx.getImageData(Math.floor(p.x), Math.floor(p.y), 1, 1).data;
-                    } catch (e) {
-                        // Handle CORS block when run directly from file://
-                        if (!this.corsAlerted) {
-                            console.warn("CORS/Canvas error. Akan berfungsi normal jika dijalankan di Server / Github / Vercel.", e);
-                            this.corsAlerted = true;
-                        }
-                        continue;
-                    }
-                    
-                    // Black line logic (R<100, G<100, B<100)
-                    if (pixel[0] < 100 && pixel[1] < 100 && pixel[2] < 100 && pixel[3] > 100) {
-                        this.sensorValues[i] = 1;
-                        blackCount++;
-                    } else {
-                        this.sensorValues[i] = 0;
-                    }
-
-                    // Junction Marker logic (Grey line marker over black track)
-                    // Mendeteksi warna abu-abu (garis tipis penanda pada gambar)
-                    if (pixel[0] > 150 && pixel[0] < 235 && 
-                        pixel[1] > 150 && pixel[1] < 235 && 
-                        pixel[2] > 150 && pixel[2] < 235) {
-                        greyCount++;
-                    }
-                }
-
-                // If at least 2 sensors see grey, we hit a junction marker
-                if (greyCount >= 2) {
-                    newJunctionState = true;
-                }
-
-                // Junction edge detection (only trigger once per mark)
-                if (newJunctionState && !this.hitJunction) {
-                    this.triggerJunction();
-                }
-                this.hitJunction = newJunctionState;
-            }
-
-            triggerJunction() {
-                // Ignore junctions if we haven't defined counters
-                if (counters.length === 0) return;
-
-                currentCounterIndex++;
-                
-                if (currentCounterIndex >= counters.length) {
-                    // Out of instructions, stop or loop? Let's just stop.
-                    this.transitionTo(States.FINISHED, null);
-                    simStatus.innerText = "ALL COUNTERS DONE";
-                    return;
-                }
-
-                activeCounterDisp.innerText = currentCounterIndex + 1;
-                
-                // Highlight active counter in UI
-                document.querySelectorAll('.counter-card').forEach((c, idx) => {
-                    c.style.borderColor = idx === currentCounterIndex ? '#3b82f6' : '#334155';
-                    c.style.boxShadow = idx === currentCounterIndex ? '0 0 10px rgba(59, 130, 246, 0.5)' : 'none';
-                });
-
-                let config = counters[currentCounterIndex];
-                
-                // Start sequence based on mode
-                let mode = startModeSelect.value;
-                if (mode === 'AC') {
-                    this.transitionTo(States.EXEC_TURN, config);
-                } else if (mode === 'SA' || mode === 'SB') {
-                    this.transitionTo(States.EXEC_TURN, config);
-                }
+                this.updateUI();
             }
 
             updateUI() {
-                // Update sensor LEDs
-                for(let i=0; i<5; i++) {
-                    let ind = document.getElementById(`ind-${i}`);
-                    if(this.sensorValues[i] === 1) {
-                        ind.classList.replace('bg-slate-600', 'bg-red-500');
-                        ind.classList.add('shadow-[0_0_8px_rgba(239,68,68,0.8)]');
-                    } else {
-                        ind.classList.replace('bg-red-500', 'bg-slate-600');
-                        ind.classList.remove('shadow-[0_0_8px_rgba(239,68,68,0.8)]');
-                    }
-                }
+                const statusEl = document.getElementById('statusText');
+                statusEl.innerText = this.state;
+                if(this.state === States.IDLE) statusEl.className = "text-slate-400 font-bold";
+                else if(this.state === States.FINISHED) statusEl.className = "text-emerald-400 font-bold";
+                else statusEl.className = "text-yellow-400 font-bold";
+
+                document.getElementById('activeCounterText').innerText = 
+                    (this.state !== States.IDLE && this.state !== States.FINISHED) ? `#${this.activeCounter + 1}` : '-';
             }
 
             draw(ctx) {
@@ -469,288 +510,181 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                // Body
-                ctx.fillStyle = '#1e293b';
-                ctx.shadowColor = 'rgba(0,0,0,0.5)';
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetY = 5;
-                // Round rect for chassis
-                ctx.beginPath();
-                ctx.roundRect(-this.height/2, -this.width/2, this.height, this.width, 5);
-                ctx.fill();
-                ctx.strokeStyle = '#3b82f6';
+                // Body Robot
+                ctx.fillStyle = '#1e293b'; // Slate 800
+                ctx.strokeStyle = '#3b82f6'; // Blue 500
                 ctx.lineWidth = 2;
-                ctx.stroke();
+                // Memusatkan body berdasarkan center (0,0) lokal
+                ctx.fillRect(-this.length/2, -this.width/2, this.length, this.width);
+                ctx.strokeRect(-this.length/2, -this.width/2, this.length, this.width);
 
-                // Direction indicator (arrow)
-                ctx.shadowBlur = 0;
+                // Panah penunjuk arah depan
                 ctx.fillStyle = '#3b82f6';
                 ctx.beginPath();
-                ctx.moveTo(0, -5);
+                ctx.moveTo(-5, -10);
                 ctx.lineTo(15, 0);
-                ctx.lineTo(0, 5);
+                ctx.lineTo(-5, 10);
                 ctx.fill();
 
-                // Wheels
+                // Ban Kiri
                 ctx.fillStyle = '#0f172a';
-                // Left Wheel
-                ctx.fillRect(-10, -this.wheelBase/2 - this.wheelRadius, 20, this.wheelRadius*2);
-                // Right Wheel
-                ctx.fillRect(-10, this.wheelBase/2 - this.wheelRadius, 20, this.wheelRadius*2);
+                ctx.fillRect(-this.length/4, -this.width/2 - 5, this.length/2, 6);
+                // Ban Kanan
+                ctx.fillRect(-this.length/4, this.width/2 - 1, this.length/2, 6);
 
-                // Sensor Array Board
-                ctx.fillStyle = '#064e3b'; // PCB Green
-                ctx.fillRect(this.sensorOffset - 5, -20, 10, 40);
-                
-                // Draw Individual Sensors
-                const positions = this.getSensorPositions(); // Need local coords here
-                ctx.fillStyle = '#ef4444'; // Off color, drawn globally below
-                
-                ctx.restore();
+                // Sensor Bar di depan
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(this.sensorDist - 2, -this.sensorSpread*2.5, 4, this.sensorSpread*5);
 
-                // Draw sensor dots globally so they match reading positions exactly
-                const globalPos = this.getSensorPositions();
-                for (let i = 0; i < 5; i++) {
+                // LED Sensors
+                for (let i = -2; i <= 2; i++) {
                     ctx.beginPath();
-                    ctx.arc(globalPos[i].x, globalPos[i].y, 2, 0, Math.PI*2);
-                    ctx.fillStyle = this.sensorValues[i] ? '#ef4444' : '#64748b';
+                    // y sensor berlawanan dengan indeks visual untuk menyesuaikan dengan posisi fisik
+                    ctx.arc(this.sensorDist, i * this.sensorSpread, 3, 0, Math.PI * 2);
+                    // Indeks array dari s0(kiri) ke s4(kanan). Saat i=-2 (atas layar/kiri robot) -> array index 0
+                    ctx.fillStyle = this.sensorValues[i+2] ? '#ef4444' : '#64748b'; 
                     ctx.fill();
                 }
+
+                ctx.restore();
             }
         }
 
         const robot = new Robot();
 
-        function updateStartPos() {
-            if(!isRunning) {
-                robot.reset();
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawTrack(ctx, false);
-                robot.draw(ctx);
-            }
-        }
+        trackImage.onload = () => {
+            // Sesuaikan ukuran canvas dengan gambar lintasan
+            simCanvas.width = trackImage.width;
+            simCanvas.height = trackImage.height;
+            hiddenCanvas.width = trackImage.width;
+            hiddenCanvas.height = trackImage.height;
 
-        function drawTrack(context, isHidden) {
-            const img = document.getElementById('trackImage');
-            
-            if (img.complete && img.naturalWidth !== 0 && !img.src.includes('placehold.co')) {
-                // Draw actual image track from file
-                context.drawImage(img, 0, 0, canvas.width, canvas.height);
-            } else {
-                // Fallback / Loading state
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                
-                context.fillStyle = '#94a3b8'; // slate-400
-                context.textAlign = 'center';
-                
-                if (!isHidden) {
-                    context.font = 'bold 18px Inter';
-                    context.fillText("Menunggu gambar 'Lapangan SD.jpg.jpg'...", canvas.width/2, canvas.height/2 - 20);
-                    context.font = '14px Inter';
-                    context.fillText("Pastikan file gambar di-upload di folder yang sama", canvas.width/2, canvas.height/2 + 10);
-                    context.fillText("dengan nama persis 'Lapangan SD.jpg.jpg'", canvas.width/2, canvas.height/2 + 30);
-                    
-                    // Draw a temporary fallback line so the robot doesn't freak out completely
-                    context.strokeStyle = '#000';
-                    context.lineWidth = 16;
-                    context.beginPath();
-                    context.moveTo(100, 1080);
-                    context.lineTo(500, 1080);
-                    context.stroke();
-                } else {
-                    // Hidden canvas fallback line
-                    context.strokeStyle = '#000';
-                    context.lineWidth = 16;
-                    context.beginPath();
-                    context.moveTo(100, 1080);
-                    context.lineTo(500, 1080);
-                    context.stroke();
-                }
-            }
-        }
+            // Gambar ke hidden canvas SEKALI SAJA di awal untuk di-baca
+            hiddenCtx.drawImage(trackImage, 0, 0);
+            trackLoaded = true;
 
-        function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            const dt = timestamp - lastTime;
-            lastTime = timestamp;
-
-            if (isRunning) {
-                // Clear visible canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Draw Background/Track on visible canvas
-                drawTrack(ctx, false);
-                
-                // Update logic based on current counter config
-                let config = currentCounterIndex >= 0 ? counters[currentCounterIndex] : null;
-                robot.update(dt, config);
-                
-                // Draw Robot
-                robot.draw(ctx);
-            }
-
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function renderCounters() {
-            countersContainer.innerHTML = '';
-            counters.forEach((c, index) => {
-                const card = document.createElement('div');
-                card.className = 'counter-card transition-all duration-300 relative';
-                card.innerHTML = `
-                    <div class="absolute top-2 right-2 text-xs font-bold bg-slate-700 px-2 rounded text-slate-300">#${index+1}</div>
-                    <div class="grid grid-cols-2 gap-3 mb-3">
-                        <div class="col-span-2">
-                            <label>Arah Belok</label>
-                            <select onchange="updateCounter(${index}, 'dir', this.value)">
-                                <option value="kanan" ${c.dir==='kanan'?'selected':''}>Belok Kanan</option>
-                                <option value="kiri" ${c.dir==='kiri'?'selected':''}>Belok Kiri</option>
-                                <option value="maju" ${c.dir==='maju'?'selected':''}>Maju Lurus</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Turn Speed L</label>
-                            <input type="number" value="${c.vTurnL}" onchange="updateCounter(${index}, 'vTurnL', this.value)">
-                        </div>
-                        <div>
-                            <label>Turn Speed R</label>
-                            <input type="number" value="${c.vTurnR}" onchange="updateCounter(${index}, 'vTurnR', this.value)">
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-slate-700 pt-2 mt-2 mb-3 grid grid-cols-2 gap-3">
-                        <div>
-                            <label title="Speed A (0-100)">Speed A</label>
-                            <input type="number" value="${c.sa}" onchange="updateCounter(${index}, 'sa', this.value)">
-                        </div>
-                        <div>
-                            <label title="Timer A (ms)">Timer A (ms)</label>
-                            <input type="number" step="100" value="${c.ta}" onchange="updateCounter(${index}, 'ta', this.value)">
-                        </div>
-                        <div>
-                            <label title="Speed B (0-100)">Speed B</label>
-                            <input type="number" value="${c.sb}" onchange="updateCounter(${index}, 'sb', this.value)">
-                        </div>
-                        <div>
-                            <label title="Timer B (ms)">Timer B (ms)</label>
-                            <input type="number" step="100" value="${c.tb}" onchange="updateCounter(${index}, 'tb', this.value)">
-                        </div>
-                    </div>
-                    
-                    <div class="border-t border-slate-700 pt-2 grid grid-cols-3 gap-2">
-                        <div class="col-span-3"><label class="text-[10px] text-emerald-400">PID Settings</label></div>
-                        <div><label>Kp</label><input type="number" step="0.1" value="${c.kp}" onchange="updateCounter(${index}, 'kp', this.value)"></div>
-                        <div><label>Ki</label><input type="number" step="0.01" value="${c.ki}" onchange="updateCounter(${index}, 'ki', this.value)"></div>
-                        <div><label>Kd</label><input type="number" step="0.5" value="${c.kd}" onchange="updateCounter(${index}, 'kd', this.value)"></div>
-                    </div>
-                    
-                    <button onclick="removeCounter(${index})" class="mt-3 w-full text-xs bg-red-900/30 text-red-400 hover:bg-red-800/50 py-1 rounded transition">Hapus Counter</button>
-                `;
-                countersContainer.appendChild(card);
-            });
-            
-            // Scroll to bottom when added
-            countersContainer.scrollTop = countersContainer.scrollHeight;
-        }
-
-        window.addCounter = () => {
-            counters.push({
-                dir: 'kanan',
-                vTurnL: 60, vTurnR: -20, // Example differential for right turn
-                sa: 50, ta: 1000,
-                sb: 80, tb: 2000,
-                kp: 2.0, ki: 0.05, kd: 10.0
-            });
-            renderCounters();
-        };
-
-        window.removeCounter = (index) => {
-            counters.splice(index, 1);
-            renderCounters();
-        };
-
-        window.updateCounter = (index, field, value) => {
-            // Convert to number except for direction string
-            counters[index][field] = field === 'dir' ? value : Number(value);
+            // Tampilkan pertama kali
+            drawSimulation();
         };
 
         function startSimulation() {
-            if (counters.length === 0) {
-                alert("Tambahkan minimal 1 counter terlebih dahulu!");
-                return;
+            if (!trackLoaded) return;
+            
+            const btn = document.getElementById('btnStart');
+            if (isRunning) {
+                // Pause
+                isRunning = false;
+                btn.innerText = "Resume";
+                btn.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+                btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+            } else {
+                // Start / Resume
+                isRunning = true;
+                btn.innerText = "Pause";
+                btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                btn.classList.add('bg-amber-600', 'hover:bg-amber-500');
+                
+                if (robot.state === States.IDLE || robot.state === States.FINISHED) {
+                    const sx = Number(document.getElementById('startX').value);
+                    const sy = Number(document.getElementById('startY').value);
+                    const sa = Number(document.getElementById('startAngle').value);
+                    robot.reset(sx, sy, sa);
+                    robot.state = States.TURNING; // Mulai counter pertama dengan belok
+                }
+                
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
             }
-            
-            isRunning = true;
-            btnStart.classList.add('hidden');
-            btnStop.classList.remove('hidden');
-            
-            if (robot.state === States.IDLE || robot.state === States.FINISHED) {
-                // Initial start, kick it off finding the line
-                robot.state = States.FINDING_LINE;
-                currentCounterIndex = -1;
-                simStatus.innerText = "FINDING LINE";
-                activeCounterDisp.innerText = "-";
-            }
-            
-            // Ensure track is drawn on hidden canvas once for sensor reading
-            drawTrack(sCtx, true);
         }
 
         function stopSimulation() {
             isRunning = false;
-            btnStart.classList.remove('hidden');
-            btnStop.classList.add('hidden');
-            if (robot.state !== States.FINISHED) {
-                simStatus.innerText = "PAUSED";
-            }
+            const btn = document.getElementById('btnStart');
+            btn.innerText = "Start";
+            btn.classList.remove('bg-amber-600', 'hover:bg-amber-500');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+            
+            const sx = Number(document.getElementById('startX').value);
+            const sy = Number(document.getElementById('startY').value);
+            const sa = Number(document.getElementById('startAngle').value);
+            robot.reset(sx, sy, sa);
+            drawSimulation(); // Update tampilan reset
         }
 
         function resetSimulation() {
             stopSimulation();
-            robot.reset();
-            currentCounterIndex = -1;
-            simStatus.innerText = "IDLE";
-            activeCounterDisp.innerText = "0";
+            counters = [{
+                dir: 'maju',
+                vTurnL: 100, vTurnR: 100,
+                sa: 50, ta: 1000,
+                sb: 80, tb: 2000,
+                kp: 60.0, ki: 0.05, kd: 10.0
+            }];
+            renderCounters();
+            document.getElementById('startMode').value = 'SB';
+            document.getElementById('startX').value = '430';
+            document.getElementById('startY').value = '1113';
+            document.getElementById('startAngle').value = '180';
             
-            // Reset UI borders
-            document.querySelectorAll('.counter-card').forEach(c => {
-                c.style.borderColor = '#334155';
-                c.style.boxShadow = 'none';
-            });
-            
-            // Redraw initial state
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawTrack(ctx, false);
+            robot.reset(430, 1113, 180);
+            drawSimulation();
+        }
+
+        function gameLoop(timestamp) {
+            if (!isRunning) return;
+
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Batasi dt maksimal (misal saat tab berpindah) untuk mencegah lonjakan
+            if (dt < 100) {
+                robot.update(dt);
+            }
+
+            drawSimulation();
+
+            if (isRunning) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function drawSimulation() {
+            // Bersihkan dan gambar ulang background lintasan
+            ctx.clearRect(0, 0, simCanvas.width, simCanvas.height);
+            if (trackLoaded) {
+                ctx.drawImage(trackImage, 0, 0);
+            }
+            // Gambar robot
             robot.draw(ctx);
         }
 
-        // Initialization
-        btnAddCounter.addEventListener('click', addCounter);
-        btnStart.addEventListener('click', startSimulation);
-        btnStop.addEventListener('click', stopSimulation);
-        btnReset.addEventListener('click', resetSimulation);
+        // Initialize UI
+        renderCounters();
+        
+        // Posisikan robot awal jika gambar belum load
+        robot.reset(
+            Number(document.getElementById('startX').value),
+            Number(document.getElementById('startY').value),
+            Number(document.getElementById('startAngle').value)
+        );
 
-        window.onload = () => {
-            // Add a default counter
-            addCounter();
+        // Jika Anda ingin mengizinkan user menggeser robot sebelum start dengan mengklik canvas:
+        simCanvas.addEventListener('mousedown', (e) => {
+            if (robot.state !== States.IDLE && robot.state !== States.FINISHED) return;
+            const rect = simCanvas.getBoundingClientRect();
+            // Skala perlu dihitung karena canvas bisa di-resize oleh CSS (max-height/max-width)
+            const scaleX = simCanvas.width / rect.width;
+            const scaleY = simCanvas.height / rect.height;
             
-            const img = document.getElementById('trackImage');
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                drawTrack(ctx, false);
-                robot.draw(ctx);
-                drawTrack(sCtx, true);
-            };
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+
+            document.getElementById('startX').value = Math.floor(clickX);
+            document.getElementById('startY').value = Math.floor(clickY);
             
-            // Initial draw
-            drawTrack(ctx, false);
-            robot.draw(ctx);
-            drawTrack(sCtx, true); // Prepare sensor canvas
-            
-            // Start animation loop (idling)
-            requestAnimationFrame(gameLoop);
-        };
+            robot.reset(clickX, clickY, Number(document.getElementById('startAngle').value));
+            drawSimulation();
+        });
 
     </script>
 </body>
