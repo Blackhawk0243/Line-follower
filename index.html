@@ -9,27 +9,17 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Mencegah scrollbar di body */
+            overflow: hidden; 
         }
-        /* Custom scrollbar untuk sidebar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563; 
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 flex h-screen w-screen m-0 p-0">
 
-    <div class="w-96 bg-gray-900 text-gray-300 flex flex-col shadow-2xl h-full flex-shrink-0 relative z-10">
+    <div class="w-[420px] bg-gray-900 text-gray-300 flex flex-col shadow-2xl h-full flex-shrink-0 relative z-10">
         <!-- Header -->
         <div class="p-5 border-b border-gray-800 bg-gray-950">
             <h1 class="text-2xl font-bold text-blue-400 flex items-center gap-2">
@@ -54,19 +44,19 @@
 
             <div class="flex gap-2">
                 <div class="flex-1">
-                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start X</label>
-                    <input type="number" id="startX" value="482" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Start X</label>
+                    <input type="number" id="startX" value="430" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Start Y</label>
-                    <input type="number" id="startY" value="1388" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Start Y</label>
+                    <input type="number" id="startY" value="1113" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Sudut (°)</label>
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Sudut (°)</label>
                     <input type="number" id="startAngle" value="180" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-xs font-bold text-emerald-400 mb-1 uppercase tracking-wider">Skala</label>
+                    <label class="block text-[10px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">Skala</label>
                     <input type="number" id="robotScale" value="1.5" step="0.1" min="0.5" class="w-full bg-gray-800 border border-gray-700 rounded p-2 text-sm text-white font-bold" oninput="updateRobotScale()">
                 </div>
             </div>
@@ -84,7 +74,7 @@
             
             <!-- Fallback Upload Gambar Manual -->
             <div class="pt-2 border-t border-gray-800">
-                 <p class="text-[10px] text-gray-500 mb-1">Jika lintasan gagal dimuat/putih:</p>
+                 <p class="text-[10px] text-gray-500 mb-1">Jika lintasan gagal dimuat/putih dari Vercel:</p>
                  <input type="file" id="imageUpload" accept="image/jpeg, image/png" class="hidden">
                  <button onclick="document.getElementById('imageUpload').click()" class="w-full bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs text-yellow-400 py-1.5 rounded transition font-medium">
                      📂 Pilih File Lintasan Manual
@@ -116,7 +106,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p class="text-white font-bold text-xl mb-2">Gambar Lintasan Gagal Dimuat</p>
-            <p class="text-gray-400 text-sm mb-4">Sistem gagal memuat <span class="font-mono text-yellow-400">Lapangan_SD.jpeg</span> dari server.</p>
+            <p class="text-gray-400 text-sm mb-4">Sistem gagal menemukan <span class="font-mono text-yellow-400">Lapangan_SD.jpeg</span> di server.</p>
             <button onclick="document.getElementById('imageUpload').click()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded shadow mt-2">
                 Pilih File Manual (Jalan Pintas)
             </button>
@@ -143,9 +133,9 @@
     </div>
 
     <script>
-        // Data Struktur Counter
+        // Data Struktur Counter dengan penambahan Timer Belok (tTurn)
         let counters = [
-            { dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 }
+            { dir: 'maju', vTurnL: 100, vTurnR: 100, tTurn: 200, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 }
         ];
 
         // State Simulator
@@ -164,22 +154,21 @@
         let animationId;
         let lastTime = 0;
 
-        // Auto-change default L/R when direction changes
         function handleDirChange(index) {
             const dirSelect = document.getElementById(`dir_${index}`);
             const val = dirSelect.value;
             let l = 100, r = 100;
             
             // Logika default belokan
-            if (val === 'kanan') { l = 80; r = -20; }
-            else if (val === 'kiri') { l = -20; r = 80; }
+            if (val === 'kanan') { l = 100; r = -20; }
+            else if (val === 'kiri') { l = -20; r = 100; }
             
             document.getElementById(`tl_${index}`).value = l;
             document.getElementById(`tr_${index}`).value = r;
+            
             updateCounterData(index);
         }
 
-        // Render UI Counters
         function renderCounters() {
             const container = document.getElementById('countersContainer');
             container.innerHTML = '';
@@ -200,18 +189,22 @@
                         </select>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="grid grid-cols-3 gap-2 mb-3 border-b border-gray-700 pb-3">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn Speed L</label>
+                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase text-rose-400">Turn Spd L</label>
                             <input type="number" id="tl_${i}" value="${c.vTurnL}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase">Turn Speed R</label>
+                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase text-rose-400">Turn Spd R</label>
                             <input type="number" id="tr_${i}" value="${c.vTurnR}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-bold text-gray-400 mb-1 uppercase text-rose-400">Timer (ms)</label>
+                            <input type="number" id="tt_${i}" value="${c.tTurn}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3 mb-3 border-t border-gray-700 pt-3">
+                    <div class="grid grid-cols-2 gap-3 mb-3 mt-3">
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-emerald-400">Speed A</label>
                             <input type="number" id="sa_${i}" value="${c.sa}" onchange="updateCounterData(${i})" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-sm text-white">
@@ -260,6 +253,7 @@
                 dir: document.getElementById(`dir_${index}`).value,
                 vTurnL: parseFloat(document.getElementById(`tl_${index}`).value) || 0,
                 vTurnR: parseFloat(document.getElementById(`tr_${index}`).value) || 0,
+                tTurn: parseFloat(document.getElementById(`tt_${index}`).value) || 0,
                 sa: parseFloat(document.getElementById(`sa_${index}`).value) || 0,
                 ta: parseFloat(document.getElementById(`ta_${index}`).value) || 0,
                 sb: parseFloat(document.getElementById(`sb_${index}`).value) || 0,
@@ -271,7 +265,7 @@
         };
 
         window.addCounter = () => {
-            counters.push({ dir: 'maju', vTurnL: 100, vTurnR: 100, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 });
+            counters.push({ dir: 'maju', vTurnL: 100, vTurnR: 100, tTurn: 200, sa: 200, ta: 1000, sb: 80, tb: 4000, kp: 25.0, ki: 0.0, kd: 15.0 });
             renderCounters();
             const container = document.getElementById('countersContainer');
             setTimeout(() => container.scrollTop = container.scrollHeight, 10);
@@ -287,14 +281,14 @@
         window.updateRobotScale = () => {
             if (robot) {
                 robot.scale = parseFloat(document.getElementById('robotScale').value) || 1.5;
-                drawScene(); 
+                drawScene(); // Langsung render ulang kanvas saat angka berubah
             }
         };
 
         const trackImg = new Image();
         
         function processLoadedImage(img) {
-            // Auto Resize jika gambar terlalu besar (Mencegah Crash di browser, aman untuk 6MB)
+            // Auto Resize jika gambar terlalu besar (Aman untuk 6MB++)
             const MAX_DIMENSION = 1500;
             let targetW = img.width;
             let targetH = img.height;
@@ -320,23 +314,21 @@
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.add('hidden');
             
-            // Gambar awal ke layar
             drawScene();
         }
 
         trackImg.onload = () => processLoadedImage(trackImg);
 
         trackImg.onerror = () => {
-            // Jika gambar gagal dimuat dari server, tunjukkan error overlay
             document.getElementById('loadingOverlay').classList.add('hidden');
             document.getElementById('errorOverlay').classList.remove('hidden');
             document.getElementById('btnStart').disabled = true;
         };
 
-        // Memuat gambar dengan versi timestamp untuk bypass agresif cache dari Vercel/Github
+        // Memuat gambar dengan versi timestamp (Anti Vercel Cache)
         trackImg.src = 'Lapangan_SD.jpeg?v=' + new Date().getTime();
 
-        // Fitur Manual Upload (Jalan Pintas jika URL gagal)
+        // Fitur Manual Upload (Jalan Pintas jika server bermasalah)
         document.getElementById('imageUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(file) {
@@ -352,15 +344,17 @@
 
         class Robot {
             constructor() {
-                this.x = 482;
-                this.y = 1388;
+                this.x = 430;
+                this.y = 1113;
                 this.angle = Math.PI; 
                 this.scale = 1.5; 
                 
+                // Dimensi Body Diperbesar agar sesuai proporsi lintasan
                 this.width = 50; 
                 this.length = 70;
                 this.wheelBase = 55;
                 
+                // Sensor direntangkan agar bisa mendeteksi garis dengan baik
                 this.sensors = [
                     { x: 35, y: -30 }, 
                     { x: 35, y: -15 },
@@ -370,7 +364,6 @@
                 ];
                 this.sensorValues = [0,0,0,0,0];
                 
-                // Variabel untuk sistem Dense Sampling
                 this.internalActiveCount = 0;
                 this.internalErrorSum = 0;
                 
@@ -403,15 +396,13 @@
                 const cosA = Math.cos(this.angle);
                 const sinA = Math.sin(this.angle);
                 
-                this.sensorValues = [0,0,0,0,0]; // Reset lampu indikator
+                this.sensorValues = [0,0,0,0,0]; 
                 let errorSum = 0;
                 let activeCount = 0;
 
-                // DENSE SAMPLING ALGORITHM
-                // Memindai 30 titik sangat rapat di sepanjang area depan robot.
-                // Mengatasi bug garis menyelinap (blank spot) di celah antar sensor.
+                // DENSE SAMPLING (30 Jaring Pemindai)
                 const scaledX = 35 * this.scale;
-                const maxSpread = 30; // Rentang Y lokal (-30 kiri sampai 30 kanan)
+                const maxSpread = 30; // Rentang Y lokal
                 const totalSamples = 30; 
                 
                 for (let i = 0; i <= totalSamples; i++) {
@@ -425,12 +416,11 @@
                         const pixel = trackCtx.getImageData(globalX, globalY, 1, 1).data;
                         const brightness = (pixel[0] + pixel[1] + pixel[2]) / 3;
                         
-                        if (brightness < 100) { // Garis hitam terdeteksi
-                            let weight = localY / 15.0; // Skala bobot posisi: -30 -> -2, Tengah -> 0, +30 -> +2
+                        if (brightness < 100) { // Jika ada garis hitam
+                            let weight = localY / 15.0; 
                             errorSum += weight;
                             activeCount++;
 
-                            // Nyalakan indikator UI Sensor yang sesuai dengan posisi pemindaian
                             if (localY < -18) this.sensorValues[0] = 1;
                             else if (localY < -6) this.sensorValues[1] = 1;
                             else if (localY <= 6) this.sensorValues[2] = 1;
@@ -446,23 +436,13 @@
 
             calculateError() {
                 if (this.internalActiveCount > 0) {
-                    // Nilai error analog (Center of Mass) yang sangat presisi dan halus
                     this.currentError = this.internalErrorSum / this.internalActiveCount;
-                    
-                    // Simpan memori posisi terakhir garis secara terus menerus
                     this.lastError = this.currentError;
                 } else {
-                    // LOGIKA LOST LINE (Robot keluar garis sepenuhnya)
-                    // Jika sebelumnya terdeteksi menikung (error besar), banting setir tajam untuk mencari garis.
-                    if (this.lastError > 0.5) {
-                        this.currentError = 3.5; 
-                    } else if (this.lastError < -0.5) {
-                        this.currentError = -3.5;
-                    } else {
-                        // Jika sebelumnya lurus presisi lalu kehilangan garis (lastError mendekati 0), 
-                        // jangan banting setir, melainkan pertahankan error kecilnya.
-                        this.currentError = this.lastError;
-                    }
+                    // LOST LINE LOGIC
+                    if (this.lastError > 0.5) this.currentError = 3.5; 
+                    else if (this.lastError < -0.5) this.currentError = -3.5;
+                    else this.currentError = this.lastError;
                 }
                 
                 document.getElementById('pidErrorText').innerText = this.currentError.toFixed(2);
@@ -480,7 +460,7 @@
                 const config = counters[this.activeCounter];
                 const startMode = document.getElementById('startMode').value;
                 
-                // Mode pembatasan hanya berlaku untuk COUNTER TERAKHIR
+                // Mode pembatasan HANYA berlaku untuk COUNTER TERAKHIR
                 const isLastCounter = (this.activeCounter === counters.length - 1); 
 
                 let vl = 0;
@@ -493,10 +473,10 @@
                         vr = config.vTurnR;
                         
                         this.stateTimer += dt;
-                        // Turn open-loop, minimal 200ms keluar garis, lalu cari garis kembali (sensor tengah = 1)
-                        if (this.stateTimer > 200 && this.sensorValues[2] === 1) {
+                        // Mode Action Timer: Belok buta berdasarkan durasi Timer
+                        if (this.stateTimer >= config.tTurn) {
                             if (isLastCounter && startMode === 'AC') {
-                                forceStopSim(); // Stop jika ini counter terakhir dan mode AC
+                                forceStopSim(); // Stop jika counter terakhir & AC
                             } else {
                                 simulationState = States.RUNNING_SA;
                                 this.stateTimer = 0;
@@ -509,7 +489,7 @@
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.ta) {
                             if (isLastCounter && startMode === 'SA') {
-                                forceStopSim(); // Stop jika ini counter terakhir dan mode SA
+                                forceStopSim(); // Stop jika counter terakhir & SA
                             } else {
                                 simulationState = States.RUNNING_SB;
                                 this.stateTimer = 0;
@@ -536,9 +516,9 @@
                         this.stateTimer += dt;
                         if (this.stateTimer >= config.tb) {
                             if (isLastCounter) {
-                                forceStopSim(); // Akhir dari keseluruhan simulasi
+                                forceStopSim(); // Akhir keseluruhan
                             } else {
-                                this.nextCounter(); // Lanjut ke counter berikutnya
+                                this.nextCounter(); 
                             }
                         } else {
                             const errB = this.calculateError();
@@ -560,19 +540,20 @@
 
                 this.updateUI();
 
-                // PWM Limit (Max 255, Min -255 layaknya mikrokontroler asli)
+                // PWM Limit seperti L298N asli
                 vl = Math.max(-255, Math.min(255, vl));
                 vr = Math.max(-255, Math.min(255, vr));
 
-                // Visual downscale (karena kalau 255 piksel/frame terlalu ngebut untuk visualisasi 60fps)
+                // Scale down speed visual layar
                 const visualScale = 0.5; 
                 vl *= visualScale;
                 vr *= visualScale;
 
                 // Kinematics Differential Drive
                 const v = (vr + vl) / 2;
-                // PERBAIKAN: Putaran roda Kiri dikurang Kanan. (Agar belok searah jarum jam saat vl > vr)
-                // Ditambahkan faktor scale agar rasio belokan seimbang saat robot dibesarkan.
+                
+                // PERBAIKAN BUG BELOK KIRI/KANAN TERBALIK
+                // Ditambahkan faktor scale agar putaran roda proporsional terhadap ukuran robot
                 const omega = (vl - vr) / (this.wheelBase * this.scale);
 
                 this.angle += omega * dtSec;
@@ -609,27 +590,25 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
-                
-                // Menerapkan skala dari UI secara visual
-                ctx.scale(this.scale, this.scale); 
+                ctx.scale(this.scale, this.scale); // TERAPKAN SKALA VISUAL
 
                 // Body Robot
-                ctx.fillStyle = '#1e3a8a'; // Blue-900
+                ctx.fillStyle = '#1e3a8a'; 
                 ctx.shadowColor = 'rgba(0,0,0,0.5)';
                 ctx.shadowBlur = 10;
                 ctx.fillRect(-this.length / 2, -this.width / 2, this.length, this.width);
                 ctx.shadowBlur = 0;
 
                 // Roda
-                ctx.fillStyle = '#111827'; // Gray-900
-                ctx.fillRect(-15, -this.width / 2 - 8, 30, 8); // Kiri
-                ctx.fillRect(-15, this.width / 2, 30, 8); // Kanan
+                ctx.fillStyle = '#111827'; 
+                ctx.fillRect(-20, -this.width / 2 - 8, 40, 8); // Kiri
+                ctx.fillRect(-20, this.width / 2, 40, 8); // Kanan
 
                 // Papan Sensor Depan
-                ctx.fillStyle = '#064e3b'; // Emerald-900
+                ctx.fillStyle = '#064e3b'; 
                 ctx.fillRect(30, -35, 10, 70);
 
-                // Titik Lampu Sensor
+                // Lampu Sensor
                 for (let i = 0; i < 5; i++) {
                     ctx.beginPath();
                     ctx.arc(this.sensors[i].x, this.sensors[i].y, 4, 0, Math.PI * 2);
@@ -638,7 +617,7 @@
                     ctx.closePath();
                 }
                 
-                // Garis Indikator Arah Panah
+                // Panah Arah
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
                 ctx.lineTo(45, 0);
@@ -667,8 +646,6 @@
 
         function startSimulation() {
             if (!trackLoaded) return;
-            
-            // Perbarui data settingan terbaru sebelum mulai
             counters.forEach((c, i) => updateCounterData(i));
             
             robot.reset(
@@ -697,18 +674,13 @@
 
         function drawScene() {
             if (!trackLoaded) return;
-            
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            // Salin track bersih dari offline canvas
             ctx.drawImage(trackCanvas, 0, 0);
-            
-            // Gambar robot
             robot.draw(ctx);
         }
 
         function animationLoop(timestamp) {
             if (simulationState === States.IDLE) return;
-
             const dt = timestamp - lastTime;
             lastTime = timestamp;
 
@@ -718,12 +690,10 @@
             animationId = requestAnimationFrame(animationLoop);
         }
 
-        // Relokasi posisi Robot Instan lewat Mouse saat Idle
+        // Relokasi posisi Robot lewat klik Mouse
         canvas.addEventListener('mousedown', (e) => {
             if (simulationState !== States.IDLE && simulationState !== States.FINISHED) return;
-            
             const rect = canvas.getBoundingClientRect();
-            // Rasio ukuran aktual layar melawan resolusi asli canvas
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
 
@@ -738,7 +708,7 @@
             drawScene();
         });
 
-        // Event Tombol Aksi
+        // Event Tombol
         document.getElementById('btnStart').addEventListener('click', startSimulation);
         document.getElementById('btnStop').addEventListener('click', stopSimulation);
         document.getElementById('btnReset').addEventListener('click', () => {
@@ -751,7 +721,6 @@
             drawScene();
         });
 
-        // Memulai Render UI awal
         renderCounters();
     </script>
 </body>
